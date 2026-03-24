@@ -11,39 +11,34 @@
         :root { --bg: #020617; --card: rgba(255,255,255,0.03); --primary: #2563eb; }
         .theme-midnight { --bg: #000000; --primary: #1e1e1e; }
         .theme-neon { --bg: #0f172a; --primary: #f472b6; }
-
-        body { background: var(--bg); color: white; font-family: sans-serif; height: 100vh; transition: 0.3s; margin: 0; overflow: hidden; }
+        body { background: var(--bg); color: white; font-family: sans-serif; height: 100vh; margin: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
         .glass { background: var(--card); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
         .hidden { display: none !important; }
-        
         .msg-own { align-self: flex-end; background: var(--primary); border-radius: 15px 15px 0 15px; }
         .msg-other { align-self: flex-start; background: rgba(255,255,255,0.1); border-radius: 15px 15px 15px 0; }
-        
         .nav-btn { opacity: 0.5; transition: 0.3s; cursor: pointer; }
         .nav-btn.active { opacity: 1; color: var(--primary); transform: scale(1.1); }
+        #main-ui { width: 100%; max-width: 500px; height: 90vh; }
+        @media (min-width: 1024px) { #main-ui { max-width: 800px; } }
     </style>
 </head>
-<body class="flex items-center justify-center p-0 sm:p-4">
+<body>
 
-    <!-- ВХОД -->
-    <div id="auth-ui" class="glass p-10 rounded-[2.5rem] text-center w-full max-w-sm">
-        <div class="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center text-4xl font-black italic mx-auto mb-6 shadow-xl">X3</div>
+    <div id="auth-ui" class="glass p-10 rounded-[2.5rem] text-center w-full max-w-sm mx-4 shadow-2xl">
+        <div class="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center text-4xl font-black italic mx-auto mb-6">X3</div>
         <h1 class="text-3xl font-black mb-10 italic">X3 Messenger</h1>
-        <button onclick="login()" class="w-full bg-white text-black py-4 rounded-2xl font-bold flex items-center justify-center gap-3 hover:scale-95 transition shadow-lg">
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20"> Войти с Google
+        <button onclick="login()" class="w-full bg-white text-black py-4 rounded-2xl font-bold flex items-center justify-center gap-3 hover:scale-95 transition">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20"> Войти через Google
         </button>
     </div>
 
-    <!-- ОСНОВНОЙ ИНТЕРФЕЙС -->
-    <div id="main-ui" class="hidden w-full max-w-4xl h-screen sm:h-[90vh] glass sm:rounded-[2.5rem] flex flex-col overflow-hidden">
-        
-        <!-- HEADER -->
-        <header class="p-6 border-b border-white/5 flex justify-between items-center">
+    <div id="main-ui" class="hidden glass sm:rounded-[2.5rem] flex flex-col overflow-hidden shadow-2xl">
+        <header class="p-4 sm:p-6 border-b border-white/5 flex justify-between items-center bg-white/5">
             <div class="flex items-center gap-3">
-                <img id="my-avatar" class="w-10 h-10 rounded-full border border-blue-500" src="">
+                <img id="my-avatar" class="w-10 h-10 rounded-full border border-blue-500 shadow-lg" src="">
                 <div>
-                    <div id="my-nickname" class="font-bold text-sm">Пользователь</div>
-                    <div id="my-id" class="text-[9px] text-blue-400 font-mono">ID: X3-loading</div>
+                    <div id="my-nickname" class="font-bold text-sm">...</div>
+                    <div id="my-id" class="text-[9px] text-blue-400 font-mono">ID: X3-XXXX</div>
                 </div>
             </div>
             <div class="flex gap-6 text-xl">
@@ -56,73 +51,108 @@
         <!-- ВКЛАДКА: ЧАТ -->
         <div id="section-chat" class="flex-1 flex flex-col p-4 overflow-hidden">
             <div id="box" class="flex-1 overflow-y-auto space-y-3 pr-2 flex flex-col mb-4"></div>
-            <div class="flex gap-2 p-2 bg-white/5 rounded-2xl">
-                <input type="text" id="msg" placeholder="Сообщение..." class="flex-1 bg-transparent border-none p-2 outline-none text-sm">
-                <button onclick="send()" class="bg-blue-600 px-5 py-3 rounded-xl font-bold transition hover:bg-blue-500">
-                    <i class="fa-solid fa-paper-plane"></i>
-                </button>
+            <div class="flex gap-2 p-2 bg-white/5 rounded-2xl border border-white/10">
+                <input type="text" id="msg" placeholder="Сообщение..." class="flex-1 bg-transparent border-none p-2 outline-none text-sm text-white">
+                <button onclick="send()" class="bg-blue-600 px-5 py-3 rounded-xl font-bold transition hover:bg-blue-500"><i class="fa-solid fa-paper-plane"></i></button>
             </div>
         </div>
 
         <!-- ВКЛАДКА: ДРУЗЬЯ -->
         <div id="section-friends" class="hidden flex-1 p-8 overflow-y-auto">
-            <h2 class="text-xl font-bold mb-4">Добавить друга</h2>
+            <h2 class="text-xl font-bold mb-4 italic text-blue-400">Добавить друга</h2>
             <div class="flex gap-2 mb-8">
-                <input type="text" id="friend-id-input" placeholder="Введите ID (например X3-A1B2)" class="flex-1 bg-white/5 border border-white/10 p-3 rounded-xl outline-none">
-                <button onclick="alert('Запрос отправлен!')" class="bg-blue-600 px-4 rounded-xl font-bold">Найти</button>
+                <input type="text" id="friend-id-input" placeholder="Введите ID (напр. X3-A1B2)" class="flex-1 bg-white/5 border border-white/10 p-3 rounded-xl outline-none text-sm">
+                <button onclick="addFriend()" class="bg-blue-600 px-6 rounded-xl font-bold">Найти</button>
             </div>
-            <h2 class="text-sm font-bold text-gray-500 uppercase mb-4">Мои контакты</h2>
-            <div id="contacts-list" class="space-y-4 italic text-gray-400 text-sm">Пока никого нет...</div>
+            <h2 class="text-xs font-bold text-gray-500 uppercase mb-4 tracking-widest text-center">Ваши друзья</h2>
+            <div id="friends-list" class="space-y-4"></div>
         </div>
 
         <!-- ВКЛАДКА: НАСТРОЙКИ -->
         <div id="section-settings" class="hidden flex-1 p-8 overflow-y-auto">
-            <h2 class="text-xl font-bold mb-6 italic">Настройки профиля</h2>
-            
+            <h2 class="text-xl font-bold mb-8 italic">Настройки</h2>
             <div class="space-y-6">
-                <div class="bg-white/5 p-4 rounded-2xl">
-                    <div class="text-[10px] text-gray-500 font-bold uppercase mb-1">Твоя почта (скрыта от всех)</div>
-                    <div id="settings-email" class="text-sm font-mono">...</div>
+                <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
+                    <div class="text-[10px] text-gray-500 font-bold uppercase mb-1">Ваша почта (скрыта)</div>
+                    <div id="settings-email" class="text-xs font-mono text-blue-200 underline">...</div>
                 </div>
-
                 <div>
                     <div class="text-[10px] text-gray-500 font-bold uppercase mb-3">Сменить тему</div>
                     <div class="flex gap-3">
-                        <div onclick="setTheme('dark')" class="w-8 h-8 rounded-full bg-slate-900 border border-white/20 cursor-pointer"></div>
-                        <div onclick="setTheme('midnight')" class="w-8 h-8 rounded-full bg-black border border-white/20 cursor-pointer"></div>
-                        <div onclick="setTheme('neon')" class="w-8 h-8 rounded-full bg-pink-500 border border-white/20 cursor-pointer"></div>
+                        <div onclick="setTheme('dark')" class="w-10 h-10 rounded-xl bg-slate-900 border border-white/20 cursor-pointer"></div>
+                        <div onclick="setTheme('midnight')" class="w-10 h-10 rounded-xl bg-black border border-white/20 cursor-pointer"></div>
+                        <div onclick="setTheme('neon')" class="w-10 h-10 rounded-xl bg-pink-500 border border-white/20 cursor-pointer"></div>
                     </div>
                 </div>
-
-                <div class="pt-10 space-y-3">
-                    <button onclick="supabase.auth.signOut()" class="w-full py-3 rounded-xl border border-white/10 font-bold text-sm hover:bg-white/5 transition">ВЫЙТИ ИЗ АККАУНТА</button>
-                    <button onclick="deleteAccount()" class="w-full py-3 rounded-xl bg-red-900/30 text-red-500 font-bold text-sm hover:bg-red-900/50 transition">УДАЛИТЬ ДАННЫЕ И АККАУНТ</button>
+                <div class="pt-10 flex flex-col gap-3">
+                    <button onclick="logout()" class="w-full py-4 rounded-xl bg-white/5 border border-white/10 font-bold text-sm">Выйти</button>
+                    <button onclick="deleteAccount()" class="w-full py-4 rounded-xl bg-red-900/20 text-red-500 font-bold text-sm border border-red-900/20">Удалить аккаунт</button>
                 </div>
             </div>
         </div>
-
     </div>
 
     <script>
         const clientSB = supabase.createClient("https://diijudzypthmfdlhhglr.supabase.co", "sb_publishable_cxF0MUM3Gn7Lc_Bi1PIAag_bwyhwANF");
-        
-        let currentUser = null;
-        let shortID = "";
+        const REDIRECT_URL = "https://v45972326-ops.github.io/xzmesseng/";
+        let currentUser = null, myShortID = "";
 
-        // ВХОД
-        async function login() {
-            await clientSB.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
+        async function login() { await clientSB.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: REDIRECT_URL } }); }
+        async function logout() { await clientSB.auth.signOut(); window.location.reload(); }
+
+        // Синхронизация профиля с базой
+        async function syncProfile(user) {
+            myShortID = "X3-" + user.id.slice(0, 4).toUpperCase();
+            await clientSB.from('profiles').upsert({
+                id: user.id,
+                short_id: myShortID,
+                full_name: user.user_metadata.full_name,
+                avatar_url: user.user_metadata.avatar_url
+            });
+            document.getElementById('my-nickname').innerText = user.user_metadata.full_name;
+            document.getElementById('my-id').innerText = "ID: " + myShortID;
+            document.getElementById('my-avatar').src = user.user_metadata.avatar_url;
+            document.getElementById('settings-email').innerText = user.email;
         }
 
-        // УДАЛЕНИЕ (Эмуляция для фронтенда)
-        async function deleteAccount() {
-            if(confirm("Удалить все ваши сообщения и выйти?")) {
-                await clientSB.from('messagesmessages').delete().eq('author', currentUser.email);
-                await clientSB.auth.signOut();
+        // Поиск и добавление друга
+        async function addFriend() {
+            const input = document.getElementById('friend-id-input').value.trim().toUpperCase();
+            if (input === myShortID) return alert("Нельзя добавить самого себя!");
+
+            const { data: person, error } = await clientSB.from('profiles').select('*').eq('short_id', input).single();
+            
+            if (!person) {
+                alert("Пользователь с таким ID не существует!");
+            } else {
+                const { error: friendError } = await clientSB.from('friends').insert({
+                    user_id: currentUser.id,
+                    friend_id: person.id
+                });
+                if (friendError) alert("Уже в списке друзей или ошибка");
+                else {
+                    alert("Друг успешно добавлен!");
+                    loadFriends();
+                }
             }
         }
 
-        // ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК
+        async function loadFriends() {
+            const { data } = await clientSB.from('friends').select('friend_id, profiles!friends_friend_id_fkey(*)').eq('user_id', currentUser.id);
+            const list = document.getElementById('friends-list');
+            if (data && data.length > 0) {
+                list.innerHTML = data.map(f => `
+                    <div class="flex items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/5">
+                        <img src="${f.profiles.avatar_url}" class="w-10 h-10 rounded-full border border-blue-500">
+                        <div class="flex-1 text-sm font-bold">${f.profiles.full_name}</div>
+                        <div class="text-[9px] text-gray-500 font-mono">${f.profiles.short_id}</div>
+                    </div>
+                `).join('');
+            } else {
+                list.innerHTML = '<p class="text-center text-gray-600 text-xs">Список друзей пуст</p>';
+            }
+        }
+
         function switchTab(tab) {
             ['chat', 'friends', 'settings'].forEach(t => {
                 document.getElementById('section-' + t).classList.add('hidden');
@@ -130,66 +160,43 @@
             });
             document.getElementById('section-' + tab).classList.remove('hidden');
             document.getElementById('tab-' + tab).classList.add('active');
+            if(tab === 'friends') loadFriends();
         }
 
-        // ТЕМЫ
-        function setTheme(theme) {
-            document.body.className = theme === 'dark' ? '' : 'theme-' + theme;
-            localStorage.setItem('x3-theme', theme);
-        }
-
-        // АВТОРИЗАЦИЯ
-        clientSB.auth.onAuthStateChange((event, session) => {
+        clientSB.auth.onAuthStateChange((ev, session) => {
             if (session) {
                 currentUser = session.user;
-                // Генерируем красивый ID из начала UUID
-                shortID = "X3-" + currentUser.id.slice(0, 4).toUpperCase();
-                
                 document.getElementById('auth-ui').classList.add('hidden');
                 document.getElementById('main-ui').classList.remove('hidden');
-                
-                document.getElementById('my-nickname').innerText = currentUser.user_metadata.full_name;
-                document.getElementById('my-id').innerText = "ID: " + shortID;
-                document.getElementById('my-avatar').src = currentUser.user_metadata.avatar_url;
-                document.getElementById('settings-email').innerText = currentUser.email;
-
+                syncProfile(currentUser);
                 loadMessages();
-                clientSB.channel('any').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messagesmessages' }, () => loadMessages()).subscribe();
+                clientSB.channel('chat').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messagesmessages' }, () => loadMessages()).subscribe();
             } else {
                 document.getElementById('auth-ui').classList.remove('hidden');
                 document.getElementById('main-ui').classList.add('hidden');
             }
         });
 
-        // ЧАТ
         async function loadMessages() {
             const { data } = await clientSB.from('messagesmessages').select('*').order('created_at', { ascending: true });
             if (!data) return;
-            const box = document.getElementById('box');
-            box.innerHTML = data.map(m => {
-                const isMine = m.author === currentUser.email;
-                return `
-                <div class="${isMine ? 'msg-own' : 'msg-other'} px-4 py-2 max-w-[80%] shadow-lg">
-                    <div class="text-[8px] opacity-40 font-bold mb-1">${m.author_name || 'Аноним'}</div>
+            document.getElementById('box').innerHTML = data.map(m => `
+                <div class="${m.author === currentUser.email ? 'msg-own' : 'msg-other'} px-4 py-2.5 max-w-[85%] shadow-xl">
+                    <div class="text-[8px] opacity-40 font-bold mb-0.5 uppercase">${m.author_name || 'Аноним'}</div>
                     <div class="text-sm">${m.text}</div>
-                </div>`;
-            }).join('');
-            box.scrollTop = box.scrollHeight;
+                </div>`).join('');
+            document.getElementById('box').scrollTop = 99999;
         }
 
         async function send() {
             const i = document.getElementById('msg');
             if (!i.value.trim()) return;
-            await clientSB.from('messagesmessages').insert([{ 
-                text: i.value, 
-                author: currentUser.email,
-                author_name: currentUser.user_metadata.full_name 
-            }]);
+            await clientSB.from('messagesmessages').insert([{ text: i.value, author: currentUser.email, author_name: currentUser.user_metadata.full_name }]);
             i.value = '';
         }
 
-        // Инициализация темы
-        setTheme(localStorage.getItem('x3-theme') || 'dark');
+        function setTheme(t) { document.body.className = t === 'dark' ? '' : 'theme-' + t; localStorage.setItem('theme', t); }
+        setTheme(localStorage.getItem('theme') || 'dark');
         document.getElementById('msg').onkeypress = e => { if (e.key === 'Enter') send(); };
     </script>
 </body>

@@ -14,30 +14,31 @@
         body { background: var(--bg); color: white; font-family: sans-serif; height: 100vh; margin: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
         .glass { background: var(--card); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
         .hidden { display: none !important; }
-        .msg-own { align-self: flex-end; background: var(--primary); border-radius: 15px 15px 0 15px; padding: 8px 12px; }
-        .msg-other { align-self: flex-start; background: rgba(255,255,255,0.1); border-radius: 15px 15px 15px 0; padding: 8px 12px; }
+        .msg-own { align-self: flex-end; background: var(--primary); border-radius: 15px 15px 0 15px; padding: 10px 15px; max-width: 80%; }
+        .msg-other { align-self: flex-start; background: rgba(255,255,255,0.1); border-radius: 15px 15px 15px 0; padding: 10px 15px; max-width: 80%; }
         .nav-btn { opacity: 0.4; cursor: pointer; padding: 10px; transition: 0.3s; }
         .nav-btn.active { opacity: 1; color: var(--primary); background: rgba(255,255,255,0.05); border-radius: 12px; }
-        #main-ui { width: 100%; max-width: 900px; height: 90vh; display: grid; grid-template-columns: 80px 1fr; }
-        .sidebar { border-right: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; align-items: center; padding: 20px 0; }
-        .chat-list { width: 280px; border-right: 1px solid rgba(255,255,255,0.05); overflow-y: auto; background: rgba(0,0,0,0.2); }
-        .chat-item { padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.02); cursor: pointer; }
-        .chat-item.active { background: rgba(37, 99, 235, 0.15); border-left: 3px solid var(--primary); }
+        #main-ui { width: 100%; max-width: 900px; height: 95vh; display: grid; grid-template-columns: 70px 1fr; }
+        .chat-list { width: 260px; border-right: 1px solid rgba(255,255,255,0.05); overflow-y: auto; }
+        .chat-item { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.02); cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .chat-item.active { background: rgba(37, 99, 235, 0.1); border-left: 3px solid var(--primary); }
     </style>
 </head>
 <body>
 
     <!-- ВХОД -->
     <div id="auth-ui" class="glass p-10 rounded-[2.5rem] text-center w-full max-w-sm mx-4">
-        <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-3xl font-black italic mx-auto mb-6 text-white shadow-xl">X3</div>
-        <button onclick="login()" class="w-full bg-white text-black py-4 rounded-2xl font-bold flex items-center justify-center gap-3"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20"> Google Login</button>
+        <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-3xl font-black mx-auto mb-6 text-white shadow-xl">X3</div>
+        <button onclick="login()" class="w-full bg-white text-black py-4 rounded-2xl font-bold flex items-center justify-center gap-3">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20"> Google Login
+        </button>
     </div>
 
-    <!-- ИНТЕРФЕЙС -->
+    <!-- ОСНОВНОЙ ИНТЕРФЕЙС -->
     <div id="main-ui" class="hidden glass sm:rounded-[2.5rem] overflow-hidden shadow-2xl">
         
-        <!-- ЛЕВАЯ ПАНЕЛЬ -->
-        <div class="sidebar bg-black/20">
+        <!-- ЛЕВАЯ ПАНЕЛЬ ИКОНОК -->
+        <div class="bg-black/20 flex flex-col items-center py-6 border-r border-white/5">
             <img id="my-avatar" class="w-10 h-10 rounded-full mb-8 border border-blue-500 shadow-lg" src="">
             <div class="flex flex-col gap-4 flex-1">
                 <i onclick="switchTab('chat')" id="tab-chat" class="fa-solid fa-comment-dots nav-btn active"></i>
@@ -47,24 +48,27 @@
             <button onclick="logout()" class="text-red-500 p-4"><i class="fa-solid fa-power-off"></i></button>
         </div>
 
-        <div id="content" class="flex flex-1 overflow-hidden">
-            <!-- СПИСОК ЧАТОВ -->
-            <div id="chat-sidebar" class="chat-list">
-                <div class="p-4 text-[10px] font-black uppercase text-gray-500 tracking-widest">Мессенджер</div>
-                <div onclick="openChat('favorites')" id="chat-fav" class="chat-item active flex items-center gap-3">
+        <div id="content-area" class="flex flex-1 overflow-hidden">
+            
+            <!-- ВКЛАДКА ЧАТЫ -->
+            <div id="chat-sidebar" class="chat-list bg-black/10">
+                <div class="p-4 text-[10px] font-black uppercase text-gray-500 tracking-widest border-b border-white/5">Диалоги</div>
+                <div onclick="openChat('favorites', 'Избранное')" id="chat-fav" class="chat-item active">
                     <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg"><i class="fa-solid fa-bookmark"></i></div>
-                    <div class="text-sm font-bold">Избранное</div>
+                    <div class="text-sm font-bold text-blue-400 italic">Избранное</div>
                 </div>
                 <div id="active-chats"></div>
             </div>
 
-            <!-- ОКНО ЧАТА -->
-            <div id="chat-window-section" class="flex-1 flex flex-col overflow-hidden">
-                <header class="p-4 border-b border-white/5 bg-white/5 font-bold text-sm italic text-blue-400" id="chat-title">Избранное</header>
-                <div id="box" class="flex-1 overflow-y-auto p-4 space-y-3 flex flex-col bg-slate-900/10"></div>
-                <div class="p-4 bg-white/5 border-t border-white/5 flex gap-2">
-                    <input type="text" id="msg" placeholder="Сообщение..." class="flex-1 bg-transparent border-none p-2 outline-none text-sm">
-                    <button onclick="send()" class="bg-blue-600 px-5 py-2 rounded-xl hover:bg-blue-500 transition"><i class="fa-solid fa-paper-plane"></i></button>
+            <!-- ОКНО ПЕРЕПИСКИ -->
+            <div id="chat-window-section" class="flex-1 flex flex-col overflow-hidden bg-black/5">
+                <header class="p-4 border-b border-white/5 bg-white/5 font-bold text-sm flex items-center gap-3">
+                    <span id="chat-title" class="text-blue-400">Избранное</span>
+                </header>
+                <div id="box" class="flex-1 overflow-y-auto p-4 space-y-3 flex flex-col"></div>
+                <div class="p-4 border-t border-white/5 flex gap-2">
+                    <input type="text" id="msg" placeholder="Написать..." class="flex-1 bg-white/5 border-none p-3 rounded-xl outline-none text-sm">
+                    <button onclick="send()" class="bg-blue-600 px-6 rounded-xl hover:bg-blue-500 transition"><i class="fa-solid fa-paper-plane"></i></button>
                 </div>
             </div>
 
@@ -73,37 +77,44 @@
                 <h2 class="text-xl font-bold mb-6 italic text-blue-400">Друзья</h2>
                 <div class="flex gap-2 mb-8">
                     <input type="text" id="friend-id-input" placeholder="ID друга (X3-XXXX)" class="flex-1 bg-white/5 border border-white/10 p-3 rounded-xl outline-none text-sm">
-                    <button onclick="addFriend()" class="bg-blue-600 px-6 rounded-xl font-bold">Найти</button>
+                    <button onclick="addFriend()" class="bg-blue-600 px-6 rounded-xl font-bold text-xs">ПОИСК</button>
                 </div>
-                <div class="mb-6"><h3 class="text-[10px] uppercase font-black text-gray-500 mb-2">Заявки</h3><div id="requests-list" class="space-y-2"></div></div>
-                <div><h3 class="text-[10px] uppercase font-black text-gray-500 mb-2">Мои друзья</h3><div id="friends-list" class="space-y-2"></div></div>
+                
+                <h3 class="text-[10px] uppercase font-black text-gray-500 mb-4 tracking-widest">Входящие заявки</h3>
+                <div id="requests-list" class="space-y-3 mb-10"></div>
+
+                <h3 class="text-[10px] uppercase font-black text-gray-500 mb-4 tracking-widest">Список друзей</h3>
+                <div id="friends-list" class="space-y-3"></div>
             </div>
 
             <!-- ВКЛАДКА НАСТРОЙКИ -->
             <div id="section-settings" class="hidden flex-1 p-8 overflow-y-auto text-center">
-                <div class="bg-white/5 p-6 rounded-3xl border border-white/5 mb-8 inline-block w-full">
-                    <div id="my-name-display" class="text-lg font-black mb-1">...</div>
-                    <div id="my-id-display" class="text-xs font-mono text-blue-400">ID: X3-loading</div>
+                <div class="bg-white/5 p-8 rounded-3xl border border-white/10 mb-8">
+                    <div id="set-name" class="text-xl font-black mb-1">...</div>
+                    <div id="set-id" class="text-sm font-mono text-blue-400 italic">...</div>
+                    <div class="text-[9px] text-gray-500 mt-4 uppercase">Почта (скрыта): <span id="set-email">...</span></div>
                 </div>
-                <button onclick="setTheme('dark')" class="w-10 h-10 rounded-full bg-slate-900 m-2 border border-white/20"></button>
-                <button onclick="setTheme('midnight')" class="w-10 h-10 rounded-full bg-black m-2 border border-white/20"></button>
-                <button onclick="setTheme('neon')" class="w-10 h-10 rounded-full bg-pink-500 m-2 border border-white/20"></button>
+                <div class="flex justify-center gap-4">
+                    <button onclick="setTheme('dark')" class="w-12 h-12 rounded-2xl bg-slate-900 border border-white/20"></button>
+                    <button onclick="setTheme('midnight')" class="w-12 h-12 rounded-2xl bg-black border border-white/20"></button>
+                    <button onclick="setTheme('neon')" class="w-12 h-12 rounded-2xl bg-pink-500 border border-white/20"></button>
+                </div>
             </div>
+
         </div>
     </div>
 
     <script>
         const clientSB = supabase.createClient("https://diijudzypthmfdlhhglr.supabase.co", "sb_publishable_cxF0MUM3Gn7Lc_Bi1PIAag_bwyhwANF");
-        const REDIRECT_URL = "https://v45972326-ops.github.io/xzmesseng/";
+        const REDIRECT_URL = window.location.origin + window.location.pathname;
         let currentUser = null, myShortID = "", currentPartner = 'favorites';
 
         async function login() { await clientSB.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: REDIRECT_URL } }); }
         async function logout() { await clientSB.auth.signOut(); window.location.reload(); }
 
+        // Переключение вкладок
         function switchTab(tab) {
-            ['chat-sidebar', 'chat-window-section', 'section-friends', 'section-settings'].forEach(id => {
-                if(document.getElementById(id)) document.getElementById(id).classList.add('hidden');
-            });
+            ['chat-sidebar', 'chat-window-section', 'section-friends', 'section-settings'].forEach(id => document.getElementById(id).classList.add('hidden'));
             if(tab === 'chat') { 
                 document.getElementById('chat-sidebar').classList.remove('hidden'); 
                 document.getElementById('chat-window-section').classList.remove('hidden'); 
@@ -112,81 +123,110 @@
             }
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             document.getElementById('tab-' + tab).classList.add('active');
-            if(tab === 'friends') loadFriends();
+            if(tab === 'friends') loadFriendsData();
         }
 
+        // Синхронизация профиля
         async function syncProfile(user) {
             myShortID = "X3-" + user.id.slice(0, 4).toUpperCase();
             await clientSB.from('profiles').upsert({ id: user.id, short_id: myShortID, full_name: user.user_metadata.full_name, avatar_url: user.user_metadata.avatar_url });
             document.getElementById('my-avatar').src = user.user_metadata.avatar_url;
-            document.getElementById('my-name-display').innerText = user.user_metadata.full_name;
-            document.getElementById('my-id-display').innerText = "ID: " + myShortID;
+            document.getElementById('set-name').innerText = user.user_metadata.full_name;
+            document.getElementById('set-id').innerText = "Ваш ID: " + myShortID;
+            document.getElementById('set-email').innerText = user.email;
+            loadChatList();
             loadMessages();
+        }
+
+        // Друзья: Добавить
+        async function addFriend() {
+            const id = document.getElementById('friend-id-input').value.trim().toUpperCase();
+            if(!id || id === myShortID) return alert("Некорректный ID");
+            const { data: p } = await clientSB.from('profiles').select('id').eq('short_id', id).single();
+            if(!p) return alert("Пользователь не найден");
+            const { error } = await clientSB.from('friends').insert({ user_id: currentUser.id, friend_id: p.id, status: 'pending' });
+            if(error) alert("Заявка уже существует"); else alert("Заявка отправлена!");
+            loadFriendsData();
+        }
+
+        // Друзья: Принять
+        async function acceptFriend(id) {
+            await clientSB.from('friends').update({ status: 'accepted' }).eq('id', id);
+            alert("Друг добавлен!");
+            loadFriendsData();
             loadChatList();
         }
 
-        async function addFriend() {
-            const id = document.getElementById('friend-id-input').value.trim().toUpperCase();
-            const { data: p } = await clientSB.from('profiles').select('id').eq('short_id', id).single();
-            if(!p) return alert("ID не найден");
-            await clientSB.from('friends').insert({ user_id: currentUser.id, friend_id: p.id, status: 'pending' });
-            alert("Заявка отправлена!"); loadFriends();
-        }
-
-        async function acceptFriend(reqId) {
-            await clientSB.from('friends').update({ status: 'accepted' }).eq('id', reqId);
-            loadFriends(); loadChatList();
-        }
-
-        async function loadFriends() {
-            const { data: fr } = await clientSB.from('friends').select('id, status, profiles!friends_friend_id_fkey(*)').eq('user_id', currentUser.id);
+        // Загрузка списков друзей
+        async function loadFriendsData() {
+            // Кто хочет добавить меня
             const { data: req } = await clientSB.from('friends').select('id, profiles!friends_user_id_fkey(*)').eq('friend_id', currentUser.id).eq('status', 'pending');
-            
             document.getElementById('requests-list').innerHTML = (req || []).map(r => `
-                <div class="flex justify-between bg-blue-500/10 p-2 rounded-xl"><span>${r.profiles.full_name}</span>
-                <button onclick="acceptFriend(${r.id})" class="text-green-400 font-bold">ПРИНЯТЬ</button></div>`).join('');
-            
+                <div class="flex justify-between items-center bg-blue-600/10 p-3 rounded-xl border border-blue-500/20">
+                    <span class="text-sm font-bold">${r.profiles.full_name}</span>
+                    <button onclick="acceptFriend(${r.id})" class="bg-green-600 px-4 py-1 rounded-lg text-[10px] font-bold">ПРИНЯТЬ</button>
+                </div>`).join('') || '<p class="text-gray-600 text-xs italic">Нет новых заявок</p>';
+
+            // Мой список друзей (уже принятых)
+            const { data: fr } = await clientSB.from('friends').select('status, profiles!friends_friend_id_fkey(*)').eq('user_id', currentUser.id);
             document.getElementById('friends-list').innerHTML = (fr || []).map(f => `
-                <div class="flex items-center gap-2 p-2 bg-white/5 rounded-xl"><img src="${f.profiles.avatar_url}" class="w-6 h-6 rounded-full">
-                <span class="text-xs">${f.profiles.full_name} (${f.status})</span></div>`).join('');
+                <div class="flex items-center gap-3 bg-white/5 p-3 rounded-xl">
+                    <img src="${f.profiles.avatar_url}" class="w-8 h-8 rounded-full">
+                    <div class="flex-1 text-sm font-bold">${f.profiles.full_name} <span class="text-[8px] opacity-40 uppercase ml-2">${f.status}</span></div>
+                </div>`).join('') || '<p class="text-gray-600 text-xs italic">Список пуст</p>';
         }
 
+        // Список чатов (друзей)
         async function loadChatList() {
-            const { data } = await clientSB.from('friends').select('profiles!friends_friend_id_fkey(*)').eq('user_id', currentUser.id).eq('status', 'accepted');
-            document.getElementById('active-chats').innerHTML = (data || []).map(f => `
-                <div onclick="openChat('${f.profiles.id}', '${f.profiles.full_name}')" class="chat-item flex items-center gap-3">
-                    <img src="${f.profiles.avatar_url}" class="w-10 h-10 rounded-xl">
-                    <div class="text-sm font-bold">${f.profiles.full_name}</div>
+            const { data: fr } = await clientSB.from('friends').select('profiles!friends_friend_id_fkey(*)').eq('user_id', currentUser.id).eq('status', 'accepted');
+            const { data: fr2 } = await clientSB.from('friends').select('profiles!friends_user_id_fkey(*)').eq('friend_id', currentUser.id).eq('status', 'accepted');
+            
+            // Объединяем тех, кого добавил я, и тех, кто добавил меня
+            const allFriends = [...(fr || []).map(x => x.profiles), ...(fr2 || []).map(x => x.profiles)];
+            
+            document.getElementById('active-chats').innerHTML = allFriends.map(f => `
+                <div onclick="openChat('${f.id}', '${f.full_name}')" class="chat-item">
+                    <img src="${f.avatar_url}" class="w-10 h-10 rounded-xl">
+                    <div class="text-sm font-bold">${f.full_name}</div>
                 </div>`).join('');
         }
 
         function openChat(id, name) {
             currentPartner = id;
-            document.getElementById('chat-title').innerText = name || 'Избранное';
+            document.getElementById('chat-title').innerText = name;
             document.querySelectorAll('.chat-item').forEach(i => i.classList.remove('active'));
             loadMessages();
         }
 
+        // Сообщения
         async function loadMessages() {
-            const query = (currentPartner === 'favorites') 
-                ? clientSB.from('messagesmessages').select('*').eq('author', currentUser.email).is('receiver', null)
-                : clientSB.from('messagesmessages').select('*').or(`and(author.eq.${currentUser.email},receiver.eq.${currentPartner}),and(author.eq.${currentPartner},receiver.eq.${currentUser.email})`);
+            let query = clientSB.from('messagesmessages').select('*');
+            if(currentPartner === 'favorites') {
+                query = query.eq('author', currentUser.email).is('receiver', null);
+            } else {
+                // Личка: я отправитель + он получатель ИЛИ он отправитель + я получатель
+                query = query.or(`and(author.eq."${currentUser.email}",receiver.eq."${currentPartner}"),and(author.eq."${currentPartner}",receiver.eq."${currentUser.email}")`);
+            }
             
             const { data } = await query.order('created_at', { ascending: true });
             document.getElementById('box').innerHTML = (data || []).map(m => `
-                <div class="${m.author === currentUser.email ? 'msg-own' : 'msg-other'} max-w-[80%]">
+                <div class="${m.author === currentUser.email ? 'msg-own' : 'msg-other'}">
+                    <div class="text-[8px] opacity-40 font-bold uppercase mb-1">${m.author_name || 'Аноним'}</div>
                     <div class="text-[13px]">${m.text}</div>
                 </div>`).join('');
             document.getElementById('box').scrollTop = 99999;
         }
 
         async function send() {
-            const val = document.getElementById('msg').value.trim();
-            if(!val) return;
-            const msgData = { text: val, author: currentUser.email, author_name: currentUser.user_metadata.full_name };
+            const i = document.getElementById('msg');
+            if(!i.value.trim()) return;
+            const msgData = { text: i.value, author: currentUser.email, author_name: currentUser.user_metadata.full_name };
             if(currentPartner !== 'favorites') msgData.receiver = currentPartner;
-            await clientSB.from('messagesmessages').insert([msgData]);
-            document.getElementById('msg').value = ''; loadMessages();
+            
+            const { error } = await clientSB.from('messagesmessages').insert([msgData]);
+            if(error) console.error(error);
+            i.value = '';
+            loadMessages();
         }
 
         clientSB.auth.onAuthStateChange((ev, session) => {
@@ -195,7 +235,10 @@
                 document.getElementById('auth-ui').classList.add('hidden');
                 document.getElementById('main-ui').classList.remove('hidden');
                 syncProfile(currentUser);
-                clientSB.channel('updates').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messagesmessages' }, () => loadMessages()).subscribe();
+                clientSB.channel('m2').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messagesmessages' }, () => loadMessages()).subscribe();
+            } else {
+                document.getElementById('auth-ui').classList.remove('hidden');
+                document.getElementById('main-ui').classList.add('hidden');
             }
         });
 

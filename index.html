@@ -3,56 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>X3 Messenger | Google</title>
+    <title>X3 Messenger</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { background: #020617; color: white; font-family: sans-serif; height: 100vh; display: flex; align-items: center; justify-content: center; margin: 0; }
-        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); padding: 2.5rem; border-radius: 2.5rem; width: 100%; max-width: 400px; text-align: center; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); padding: 2.5rem; border-radius: 2.5rem; width: 100%; max-width: 400px; text-align: center; }
         .hidden { display: none !important; }
-        .msg-own { align-self: flex-end; background: #2563eb; border-radius: 15px 15px 0 15px; padding: 8px 15px; }
-        .msg-other { align-self: flex-start; background: #1e293b; border-radius: 15px 15px 15px 0; padding: 8px 15px; }
+        .msg-own { align-self: flex-end; background: #2563eb; border-radius: 15px 15px 0 15px; padding: 10px 15px; margin-bottom: 10px; max-width: 80%; }
+        .msg-other { align-self: flex-start; background: #1e293b; border-radius: 15px 15px 15px 0; padding: 10px 15px; margin-bottom: 10px; max-width: 80%; }
     </style>
 </head>
 <body>
 
-    <!-- ЭКРАН ВХОДА -->
-    <div id="auth-section" class="glass">
-        <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-3xl font-black italic mx-auto mb-6 shadow-lg shadow-blue-500/50">X3</div>
-        <h1 class="text-2xl font-bold mb-2 italic tracking-tighter">X3 MESSENGER</h1>
-        <p class="text-[10px] text-gray-500 mb-8 uppercase tracking-widest font-bold">Private Google Network</p>
+    <!-- ОКНО ВХОДА -->
+    <div id="auth-section" class="glass shadow-2xl">
+        <div class="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center text-4xl font-black italic mx-auto mb-6 shadow-xl shadow-blue-500/20">X3</div>
+        <h1 class="text-3xl font-black mb-2 italic tracking-tighter">X3 MESSENGER</h1>
+        <p class="text-[10px] text-gray-500 mb-10 uppercase tracking-[0.3em] font-bold">Secure Google Login</p>
         
-        <button onclick="login()" class="w-full bg-white text-black py-4 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-gray-200 transition active:scale-95 shadow-xl">
+        <button onclick="login()" class="w-full bg-white text-black py-4 rounded-2xl font-black flex items-center justify-center gap-3 hover:bg-gray-200 transition active:scale-95 shadow-lg">
             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
             ВОЙТИ ЧЕРЕЗ GOOGLE
         </button>
     </div>
 
-    <!-- ЭКРАН ЧАТА -->
-    <div id="chat-section" class="hidden glass shadow-2xl" style="width: 90vw; max-width: 800px; height: 85vh; display: flex; flex-direction: column;">
+    <!-- ОКНО ЧАТА -->
+    <div id="chat-section" class="hidden glass shadow-2xl" style="width: 95vw; max-width: 800px; height: 90vh; display: flex; flex-direction: column;">
         <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
-            <span id="u-name" class="text-[10px] font-bold text-blue-400">...</span>
-            <button onclick="handleLogout()" class="text-[9px] text-red-500 font-bold uppercase">Выйти</button>
+            <div class="flex items-center gap-2">
+                <img id="u-avatar" src="" class="w-8 h-8 rounded-full border border-blue-500">
+                <span id="u-name" class="text-xs font-bold text-blue-400">...</span>
+            </div>
+            <button onclick="supabase.auth.signOut()" class="text-[9px] text-red-500 font-black uppercase hover:underline">Выйти</button>
         </div>
-        <div id="box" class="flex-1 overflow-y-auto mb-4 space-y-3 pr-2 flex flex-col text-left text-sm"></div>
+        
+        <div id="box" class="flex-1 overflow-y-auto mb-4 pr-2 flex flex-col text-left text-sm">
+            <!-- Сообщения будут тут -->
+        </div>
+
         <div class="flex gap-2">
-            <input type="text" id="msg" placeholder="Сообщение..." class="flex-1 bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:ring-1 focus:ring-blue-500 text-white">
-            <button onclick="send()" class="bg-blue-600 px-6 rounded-2xl font-bold">-></button>
+            <input type="text" id="msg" placeholder="Написать..." class="flex-1 bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:ring-1 focus:ring-blue-500 text-white">
+            <button onclick="send()" class="bg-blue-600 px-6 rounded-2xl font-bold hover:bg-blue-500 transition"><i class="fa-solid fa-paper-plane"></i></button>
         </div>
     </div>
 
     <script>
-        // ИНИЦИАЛИЗАЦИЯ (ОДИН РАЗ!)
+        // Инициализация (СТРОГО ОДИН РАЗ)
         const SB_URL = "https://diijudzypthmfdlhhglr.supabase.co";
         const SB_KEY = "sb_publishable_cxF0MUM3Gn7Lc_Bi1PIAag_bwyhwANF";
         const supabase = supabase.createClient(SB_URL, SB_KEY);
 
         const authSection = document.getElementById('auth-section');
         const chatSection = document.getElementById('chat-section');
-        const chatWindow = document.getElementById('box');
+        const chatBox = document.getElementById('box');
+        let currentUser = null;
 
-        // ФУНКЦИЯ ВХОДА
+        // Вход
         async function login() {
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
@@ -61,17 +69,14 @@
             if (error) alert("Ошибка: " + error.message);
         }
 
-        async function handleLogout() {
-            await supabase.auth.signOut();
-        }
-
-        // КОНТРОЛЬ СЕССИИ
+        // Слежка за авторизацией
         supabase.auth.onAuthStateChange((event, session) => {
             if (session) {
                 currentUser = session.user;
                 authSection.classList.add('hidden');
                 chatSection.classList.remove('hidden');
-                document.getElementById('u-name').innerText = session.user.email;
+                document.getElementById('u-name').innerText = currentUser.user_metadata.full_name || currentUser.email;
+                document.getElementById('u-avatar').src = currentUser.user_metadata.avatar_url || '';
                 loadMessages();
             } else {
                 authSection.classList.remove('hidden');
@@ -79,33 +84,33 @@
             }
         });
 
-        // ЗАГРУЗКА
+        // Загрузка
         async function loadMessages() {
-            const { data } = await supabase.from('messagesmessages').select('*').order('created_at', { ascending: true });
-            chatWindow.innerHTML = '';
+            const { data, error } = await supabase.from('messagesmessages').select('*').order('created_at', { ascending: true });
+            if (error) return console.error(error);
+            chatBox.innerHTML = '';
             if (data) data.forEach(msg => {
-                const isMine = supabase.auth.getUser().then(({data}) => {
-                   const div = document.createElement('div');
-                   const isMe = data.user && data.user.email === msg.author;
-                   div.className = `max-w-[80%] ${isMe ? 'msg-own' : 'msg-other'}`;
-                   div.innerHTML = `<div class="text-[8px] opacity-40 font-bold">${msg.author.split('@')[0]}</div><div>${msg.text}</div>`;
-                   chatWindow.appendChild(div);
-                   chatWindow.scrollTop = chatWindow.scrollHeight;
-                });
+                const isMine = currentUser && msg.author === currentUser.email;
+                const div = document.createElement('div');
+                div.className = isMine ? 'msg-own' : 'msg-other';
+                div.innerHTML = `<div class="text-[8px] opacity-40 font-bold mb-1">${msg.author.split('@')[0]}</div><div>${msg.text}</div>`;
+                chatBox.appendChild(div);
             });
+            chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        // ОТПРАВКА
+        // Отправка
         async function send() {
             const input = document.getElementById('msg');
             const text = input.value.trim();
-            if (!text) return;
-            const { data: { user } } = await supabase.auth.getUser();
-            await supabase.from('messagesmessages').insert([{ text: text, author: user.email }]);
+            if (!text || !currentUser) return;
+
+            const { error } = await supabase.from('messagesmessages').insert([{ text: text, author: currentUser.email }]);
+            if (error) alert("Ошибка базы: " + error.message);
             input.value = '';
         }
 
-        // РЕАЛЬНОЕ ВРЕМЯ
+        // Realtime
         supabase.channel('room1').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messagesmessages' }, () => loadMessages()).subscribe();
         document.getElementById('msg').onkeypress = e => { if (e.key === 'Enter') send(); };
     </script>

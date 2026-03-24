@@ -3,122 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ХЗ Messenger | Google Edition</title>
-    <!-- Библиотеки -->
+    <title>X3 Messenger | Google</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
-    
     <style>
-        body { font-family: 'Inter', sans-serif; background: #020617; color: white; height: 100vh; overflow: hidden; }
-        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .msg-own { align-self: flex-end; background: linear-gradient(135deg, #3b82f6, #1d4ed8); border-radius: 20px 20px 4px 20px; }
-        .msg-other { align-self: flex-start; background: rgba(255, 255, 255, 0.08); border-radius: 20px 20px 20px 4px; }
-        #chat-window::-webkit-scrollbar { width: 4px; }
-        #chat-window::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
-        .rec-active { color: #ef4444; animation: pulse 1s infinite; }
-        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.5; } }
+        body { background: #020617; color: white; font-family: sans-serif; height: 100vh; display: flex; align-items: center; justify-content: center; margin: 0; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); padding: 2.5rem; border-radius: 2.5rem; width: 100%; max-width: 400px; text-align: center; }
         .hidden { display: none !important; }
+        .msg-own { align-self: flex-end; background: #2563eb; border-radius: 15px 15px 0 15px; }
+        .msg-other { align-self: flex-start; background: #1e293b; border-radius: 15px 15px 15px 0; }
     </style>
 </head>
-<body class="flex items-center justify-center p-0 sm:p-4">
+<body>
 
     <!-- ЭКРАН ВХОДА -->
-    <div id="auth-section" class="w-full max-w-md p-10 glass rounded-[2.5rem] shadow-2xl text-center mx-4 transition-all">
-        <div class="w-20 h-20 mx-auto mb-6 bg-blue-600 rounded-3xl flex items-center justify-center text-4xl font-black italic shadow-2xl shadow-blue-500/30">ХЗ</div>
-        <h1 class="text-3xl font-black mb-2 italic tracking-tighter">ХЗ MESSENGER</h1>
-        <p class="text-gray-500 text-[10px] mb-10 uppercase tracking-[0.4em] font-black italic">Private Google Network</p>
+    <div id="auth-section" class="glass">
+        <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-3xl font-black italic mx-auto mb-6">X3</div>
+        <h1 class="text-2xl font-bold mb-2 italic italic italic">X3 MESSENGER</h1>
+        <p class="text-[10px] text-gray-500 mb-8 uppercase tracking-widest font-bold">Private Google Network</p>
         
-        <button onclick="login()" class="w-full bg-white text-black py-4 rounded-2xl font-black flex items-center justify-center gap-3 text-sm shadow-xl hover:bg-gray-200 transition active:scale-95">
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5">
+        <button onclick="login()" class="w-full bg-white text-black py-4 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-gray-200 transition">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
             ВОЙТИ ЧЕРЕЗ GOOGLE
         </button>
-        <p class="text-[9px] text-gray-600 mt-8 italic px-4">Входя в сеть, вы соглашаетесь с тем, что ваши сообщения исчезнут через 3 дня.</p>
     </div>
 
     <!-- ЭКРАН ЧАТА -->
-    <div id="chat-section" class="hidden w-full max-w-5xl h-screen sm:h-[90vh] glass sm:rounded-[3rem] shadow-2xl flex flex-col overflow-hidden relative">
-        <!-- Шапка -->
-        <header class="px-8 py-5 border-b border-white/5 bg-white/5 flex justify-between items-center backdrop-blur-md">
-            <div class="flex items-center gap-4">
-                <img id="u-avatar" class="w-11 h-11 rounded-2xl border-2 border-blue-500/30 shadow-lg" src="">
-                <div>
-                    <h1 id="u-name" class="text-sm font-black text-blue-100 uppercase tracking-tighter">Загрузка...</h1>
-                    <button onclick="supabase.auth.signOut()" class="text-[9px] text-red-500 font-black uppercase tracking-widest hover:text-red-400 transition">Выйти из сети</button>
-                </div>
-            </div>
-            <div class="hidden md:block text-[9px] font-black text-blue-400 bg-blue-500/10 px-5 py-2 rounded-full border border-blue-500/20 uppercase">
-                Ghost Mode: Active
-            </div>
-        </header>
-
-        <!-- Чат -->
-        <div id="chat-window" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 flex flex-col">
-            <!-- Сообщения появятся здесь -->
+    <div id="chat-section" class="hidden glass shadow-2xl" style="max-width: 800px; height: 85vh; display: flex; flex-direction: column;">
+        <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
+            <span id="u-name" class="text-[10px] font-bold text-blue-400">...</span>
+            <button onclick="supabase.auth.signOut()" class="text-[9px] text-red-500 font-bold uppercase">Выйти</button>
         </div>
-
-        <!-- Превью файла -->
-        <div id="preview" class="hidden px-8 py-3 bg-blue-600/20 border-t border-blue-500/30 flex justify-between items-center text-[10px] font-bold italic text-blue-200">
-            <span id="file-info">Файл готов к отправке...</span>
-            <button onclick="clearFile()" class="text-red-500 uppercase font-black">Отмена</button>
-        </div>
-
-        <!-- Поле ввода -->
-        <div class="p-4 sm:p-6 bg-white/5 border-t border-white/5">
-            <div class="flex items-center gap-3 max-w-4xl mx-auto">
-                <label class="cursor-pointer text-gray-400 hover:text-blue-400 transition">
-                    <i class="fa-solid fa-circle-plus text-2xl"></i>
-                    <input type="file" id="fileInput" class="hidden" onchange="handleFile()">
-                </label>
-                
-                <button id="micBtn" class="text-gray-400 hover:text-red-500 transition">
-                    <i class="fa-solid fa-microphone text-xl" id="micIcon"></i>
-                </button>
-
-                <input type="text" id="msgInput" placeholder="Введите сообщение..." 
-                    class="flex-1 bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition">
-                
-                <button onclick="send()" class="w-14 h-14 bg-blue-600 hover:bg-blue-500 rounded-2xl transition shadow-2xl shadow-blue-600/30 flex items-center justify-center">
-                    <i class="fa-solid fa-paper-plane text-xl"></i>
-                </button>
-            </div>
+        <div id="box" class="flex-1 overflow-y-auto mb-4 space-y-3 pr-2 flex flex-col text-left text-sm"></div>
+        <div class="flex gap-2">
+            <input type="text" id="msg" placeholder="Сообщение..." class="flex-1 bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:ring-1 focus:ring-blue-500">
+            <button onclick="send()" class="bg-blue-600 px-6 rounded-2xl font-bold">-></button>
         </div>
     </div>
 
     <script>
-        // --- ПАРАМЕТРЫ SUPABASE ---
+        // 1. ИНИЦИАЛИЗАЦИЯ (ТОЛЬКО ОДИН РАЗ!)
         const SB_URL = "https://diijudzypthmfdlhhglr.supabase.co";
         const SB_KEY = "sb_publishable_cxF0MUM3Gn7Lc_Bi1PIAag_bwyhwANF";
         const supabase = supabase.createClient(SB_URL, SB_KEY);
 
         const authSection = document.getElementById('auth-section');
         const chatSection = document.getElementById('chat-section');
-        const chatWindow = document.getElementById('chat-window');
-        const msgInput = document.getElementById('msgInput');
-        
+        const chatWindow = document.getElementById('box');
         let currentUser = null;
-        let selectedFile = null;
-        let mediaRecorder;
-        let audioChunks = [];
 
-        // --- ФУНКЦИЯ ВХОДА ---
+        // 2. ФУНКЦИЯ ВХОДА
         async function login() {
+            console.log("Нажата кнопка входа");
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: { redirectTo: window.location.href }
             });
-            if (error) alert("Ошибка: " + error.message);
+            if (error) alert("Ошибка Google: " + error.message);
         }
 
-        // Слежка за авторизацией
+        // 3. КОНТРОЛЬ АВТОРИЗАЦИИ
         supabase.auth.onAuthStateChange((event, session) => {
             if (session) {
                 currentUser = session.user;
                 authSection.classList.add('hidden');
                 chatSection.classList.remove('hidden');
-                document.getElementById('u-name').innerText = currentUser.user_metadata.full_name || currentUser.email;
-                document.getElementById('u-avatar').src = currentUser.user_metadata.avatar_url || 'https://via.placeholder.com/100';
+                document.getElementById('u-name').innerText = currentUser.email;
                 loadMessages();
             } else {
                 authSection.classList.remove('hidden');
@@ -126,102 +77,44 @@
             }
         });
 
-        // --- ЛОГИКА СООБЩЕНИЙ ---
+        // 4. ЗАГРУЗКА СООБЩЕНИЙ
         async function loadMessages() {
-            const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
-            const { data } = await supabase.from('messagesmessages').select('*').gt('created_at', threeDaysAgo).order('created_at', { ascending: true });
-            chatWindow.innerHTML = '';
-            if (data) data.forEach(renderMessage);
-            scrollToBottom();
-        }
-
-        function renderMessage(msg) {
-            const div = document.createElement('div');
-            const isMine = currentUser && msg.author === currentUser.email;
-            div.className = `flex flex-col mb-4 ${isMine ? 'items-end' : 'items-start'}`;
+            const { data, error } = await supabase
+                .from('messagesmessages')
+                .select('*')
+                .order('created_at', { ascending: true });
             
-            let content = '';
-            if (msg.type === 'text') content = `<p class="leading-relaxed break-words">${msg.text || ''}</p>`;
-            else if (msg.type === 'image') content = `<img src="${msg.file_url}" class="rounded-2xl max-h-80 shadow-2xl" onclick="window.open('${msg.file_url}')">`;
-            else if (msg.type === 'audio') content = `<audio controls class="h-8 w-44 brightness-125"><source src="${msg.file_url}"></audio>`;
-            else content = `<a href="${msg.file_url}" target="_blank" class="text-blue-400 italic underline text-xs font-bold font-mono uppercase tracking-widest leading-none border-b border-blue-500/30 pb-1">Файл прикреплен</a>`;
-
-            const time = new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            const nick = msg.author.split('@')[0];
-
-            div.innerHTML = `
-                <span class="text-[8px] text-gray-600 mb-1 px-3 font-black uppercase tracking-widest">${isMine ? 'Вы' : nick}</span>
-                <div class="px-5 py-3 shadow-xl ${isMine ? 'msg-own' : 'msg-other'}">
-                    ${content}
-                    <span class="text-[7px] opacity-30 block text-right mt-2 font-mono italic tracking-tighter">${time}</span>
-                </div>
-            `;
-            chatWindow.appendChild(div);
-            scrollToBottom();
+            if (error) { console.error(error); return; }
+            chatWindow.innerHTML = '';
+            if (data) data.forEach(msg => {
+                const isMine = currentUser && msg.author === currentUser.email;
+                const div = document.createElement('div');
+                div.className = `px-4 py-2 max-w-[80%] ${isMine ? 'msg-own' : 'msg-other'}`;
+                div.innerHTML = `<div class="text-[8px] opacity-40 font-bold">${msg.author.split('@')[0]}</div><div>${msg.text}</div>`;
+                chatWindow.appendChild(div);
+            });
+            chatWindow.scrollTop = chatWindow.scrollHeight;
         }
 
+        // 5. ОТПРАВКА
         async function send() {
-            const text = msgInput.value.trim();
-            if (!text && !selectedFile) return;
+            const input = document.getElementById('msg');
+            const text = input.value.trim();
+            if (!text || !currentUser) return;
 
-            let fileUrl = null, type = 'text';
-
-            if (selectedFile) {
-                const fileName = `${Date.now()}_${selectedFile.name}`;
-                const { data } = await supabase.storage.from('uploads').upload(fileName, selectedFile);
-                if (data) {
-                    const { data: urlData } = supabase.storage.from('uploads').getPublicUrl(fileName);
-                    fileUrl = urlData.publicUrl;
-                    type = selectedFile.type.startsWith('image') ? 'image' : 'file';
-                }
-            }
-
-            await supabase.from('messagesmessages').insert([{ text, file_url: fileUrl, type, author: currentUser.email }]);
-            msgInput.value = '';
-            clearFile();
+            const { error } = await supabase.from('messagesmessages').insert([
+                { text: text, author: currentUser.email }
+            ]);
+            
+            if (error) alert("Ошибка базы: " + error.message);
+            input.value = '';
         }
 
-        // --- ГОЛОСОВЫЕ ---
-        document.getElementById('micBtn').onclick = async () => {
-            const micIcon = document.getElementById('micIcon');
-            if (!mediaRecorder || mediaRecorder.state === 'inactive') {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    mediaRecorder = new MediaRecorder(stream);
-                    audioChunks = [];
-                    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-                    mediaRecorder.onstop = async () => {
-                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                        const fileName = `voice_${Date.now()}.webm`;
-                        await supabase.storage.from('uploads').upload(fileName, audioBlob);
-                        const { data } = supabase.storage.from('uploads').getPublicUrl(fileName);
-                        await supabase.from('messagesmessages').insert([{ file_url: data.publicUrl, type: 'audio', author: currentUser.email }]);
-                    };
-                    mediaRecorder.start();
-                    micIcon.classList.add('rec-active', 'fa-circle-dot');
-                    micIcon.classList.remove('fa-microphone');
-                } catch (e) { alert("Включите доступ к микрофону!"); }
-            } else {
-                mediaRecorder.stop();
-                micIcon.classList.remove('rec-active', 'fa-circle-dot');
-                micIcon.classList.add('fa-microphone');
-            }
-        };
-
-        // --- ДОП ФУНКЦИИ ---
-        function handleFile() {
-            selectedFile = document.getElementById('fileInput').files[0];
-            if (selectedFile) {
-                document.getElementById('preview').classList.remove('hidden');
-                document.getElementById('file-info').innerText = "К ОТПРАВКЕ: " + selectedFile.name;
-            }
-        }
-        function clearFile() { selectedFile = null; document.getElementById('preview').classList.add('hidden'); }
-        function scrollToBottom() { chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: 'smooth' }); }
+        // 6. REALTIME ОБНОВЛЕНИЕ
+        supabase.channel('room1').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messagesmessages' }, () => loadMessages()).subscribe();
         
-        // Подписка Realtime
-        supabase.channel('public:messagesmessages').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messagesmessages' }, p => renderMessage(p.new)).subscribe();
-        msgInput.onkeypress = e => { if (e.key === 'Enter') send(); };
+        // Enter для отправки
+        document.getElementById('msg').onkeypress = e => { if (e.key === 'Enter') send(); };
     </script>
 </body>
 </html>

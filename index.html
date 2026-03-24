@@ -14,21 +14,20 @@
         body { background: var(--bg); color: white; font-family: sans-serif; height: 100vh; margin: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
         .glass { background: var(--card); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
         .hidden { display: none !important; }
-        .msg-own { align-self: flex-end; background: var(--primary); border-radius: 15px 15px 0 15px; padding: 10px 15px; max-width: 80%; }
-        .msg-other { align-self: flex-start; background: rgba(255,255,255,0.1); border-radius: 15px 15px 15px 0; padding: 10px 15px; max-width: 80%; }
+        .msg-own { align-self: flex-end; background: var(--primary); border-radius: 15px 15px 0 15px; padding: 10px 15px; }
+        .msg-other { align-self: flex-start; background: rgba(255,255,255,0.1); border-radius: 15px 15px 15px 0; padding: 10px 15px; }
         .nav-btn { opacity: 0.4; cursor: pointer; padding: 12px; transition: 0.3s; }
         .nav-btn.active { opacity: 1; color: var(--primary); background: rgba(255,255,255,0.05); border-radius: 15px; }
         #main-ui { width: 100%; max-width: 900px; height: 95vh; display: grid; grid-template-columns: 80px 1fr; }
-        .chat-sidebar { width: 280px; border-right: 1px solid rgba(255,255,255,0.05); overflow-y: auto; background: rgba(0,0,0,0.1); }
-        .chat-item { padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.02); cursor: pointer; display: flex; align-items: center; gap: 12px; transition: 0.2s; }
-        .chat-item:hover { background: rgba(255,255,255,0.05); }
+        .chat-sidebar { width: 280px; border-right: 1px solid rgba(255,255,255,0.05); overflow-y: auto; }
+        .chat-item { padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.02); cursor: pointer; display: flex; align-items: center; gap: 12px; }
         .chat-item.active { background: rgba(37, 99, 235, 0.1); border-left: 4px solid var(--primary); }
     </style>
 </head>
 <body>
 
     <div id="auth-ui" class="glass p-10 rounded-[2.5rem] text-center w-full max-w-sm mx-4 shadow-2xl">
-        <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-3xl font-black mx-auto mb-6 text-white shadow-xl">X3</div>
+        <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-3xl font-black italic mx-auto mb-6 text-white shadow-xl">X3</div>
         <button onclick="login()" class="w-full bg-white text-black py-4 rounded-2xl font-bold flex items-center justify-center gap-3">
             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20"> Google Login
         </button>
@@ -36,70 +35,54 @@
 
     <div id="main-ui" class="hidden glass sm:rounded-[2.5rem] overflow-hidden shadow-2xl">
         
-        <!-- SIDEBAR ICONS -->
         <div class="bg-black/30 flex flex-col items-center py-8 border-r border-white/5">
             <img id="my-avatar" class="w-12 h-12 rounded-full mb-10 border-2 border-blue-500 shadow-lg" src="">
-            <div class="flex flex-col gap-6 flex-1">
-                <i onclick="switchTab('chat')" id="tab-chat" class="fa-solid fa-comment-dots nav-btn active text-xl"></i>
-                <i onclick="switchTab('friends')" id="tab-friends" class="fa-solid fa-user-plus nav-btn text-xl"></i>
-                <i onclick="switchTab('settings')" id="tab-settings" class="fa-solid fa-gear nav-btn text-xl"></i>
+            <div class="flex flex-col gap-6 flex-1 text-xl text-white">
+                <i onclick="switchTab('chat')" id="tab-chat" class="fa-solid fa-comment-dots nav-btn active"></i>
+                <i onclick="switchTab('friends')" id="tab-friends" class="fa-solid fa-user-plus nav-btn"></i>
+                <i onclick="switchTab('settings')" id="tab-settings" class="fa-solid fa-gear nav-btn"></i>
             </div>
-            <button onclick="logout()" class="text-red-500 p-4 hover:scale-110 transition"><i class="fa-solid fa-power-off"></i></button>
+            <button onclick="logout()" class="text-red-500 p-4"><i class="fa-solid fa-power-off"></i></button>
         </div>
 
         <div class="flex flex-1 overflow-hidden">
-            <!-- CHAT LIST -->
             <div id="chat-sidebar-ui" class="chat-sidebar">
-                <div class="p-5 text-[10px] font-black uppercase text-gray-500 tracking-[0.2em] border-b border-white/5">Диалоги</div>
+                <div class="p-5 text-[10px] font-black uppercase text-gray-500 tracking-widest border-b border-white/5">ЧАТЫ</div>
                 <div onclick="openChat(null, 'Избранное')" id="chat-fav" class="chat-item active">
-                    <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center"><i class="fa-solid fa-bookmark text-white"></i></div>
-                    <div class="text-sm font-bold">Избранное</div>
+                    <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg"><i class="fa-solid fa-bookmark text-white"></i></div>
+                    <div class="text-sm font-bold text-blue-400">Избранное</div>
                 </div>
                 <div id="active-chats"></div>
             </div>
 
-            <!-- MESSAGES WINDOW -->
             <div id="chat-window-ui" class="flex-1 flex flex-col overflow-hidden bg-black/10">
-                <header class="p-5 border-b border-white/5 bg-white/5 font-bold text-sm flex items-center gap-3">
-                    <span id="chat-title" class="text-blue-400 italic font-mono uppercase tracking-tighter">Избранное</span>
-                </header>
+                <header class="p-5 border-b border-white/5 bg-white/5 font-bold text-sm text-blue-400 italic" id="chat-title">Избранное</header>
                 <div id="box" class="flex-1 overflow-y-auto p-5 space-y-4 flex flex-col"></div>
-                <div class="p-5 border-t border-white/5 flex gap-3 bg-black/20">
-                    <input type="text" id="msg" placeholder="Сообщение..." class="flex-1 bg-white/5 border-none p-3 rounded-xl outline-none text-sm text-white">
-                    <button onclick="send()" class="bg-blue-600 px-6 rounded-xl hover:bg-blue-500 transition shadow-lg"><i class="fa-solid fa-paper-plane"></i></button>
+                <div class="p-5 border-t border-white/5 flex gap-3">
+                    <input type="text" id="msg" placeholder="Написать..." class="flex-1 bg-white/5 border-none p-3 rounded-xl outline-none text-white">
+                    <button onclick="send()" class="bg-blue-600 px-6 rounded-xl hover:bg-blue-500 transition"><i class="fa-solid fa-paper-plane"></i></button>
                 </div>
             </div>
 
-            <!-- FRIENDS TAB -->
             <div id="section-friends" class="hidden flex-1 p-10 overflow-y-auto">
                 <h2 class="text-2xl font-black mb-8 italic text-blue-400">Друзья</h2>
                 <div class="flex gap-3 mb-10">
-                    <input type="text" id="friend-id-input" placeholder="ID друга (X3-XXXX)" class="flex-1 bg-white/5 border border-white/10 p-4 rounded-2xl outline-none text-sm text-white focus:border-blue-500 transition">
+                    <input type="text" id="friend-id-input" placeholder="ID друга (X3-XXXX)" class="flex-1 bg-white/5 border border-white/10 p-4 rounded-2xl outline-none text-white focus:border-blue-500 transition text-sm">
                     <button onclick="addFriend()" class="bg-blue-600 px-8 rounded-2xl font-bold uppercase text-xs">Найти</button>
                 </div>
-                
-                <div class="mb-10">
-                    <h3 class="text-[10px] uppercase font-black text-gray-500 mb-4 tracking-[0.2em]">Входящие заявки</h3>
-                    <div id="requests-list" class="space-y-3"></div>
-                </div>
-
-                <div>
-                    <h3 class="text-[10px] uppercase font-black text-gray-500 mb-4 tracking-[0.2em]">Ваши контакты</h3>
-                    <div id="friends-list" class="space-y-3"></div>
-                </div>
+                <div class="mb-10"><h3 class="text-[10px] uppercase font-black text-gray-500 mb-4">Входящие заявки</h3><div id="requests-list" class="space-y-3"></div></div>
+                <div><h3 class="text-[10px] uppercase font-black text-gray-500 mb-4">Мои друзья</h3><div id="friends-list" class="space-y-3"></div></div>
             </div>
 
-            <!-- SETTINGS TAB -->
             <div id="section-settings" class="hidden flex-1 p-10 overflow-y-auto text-center">
-                <div class="bg-white/5 p-10 rounded-[2rem] border border-white/10 mb-10">
-                    <div id="set-name" class="text-2xl font-black mb-2 uppercase tracking-tighter">...</div>
-                    <div id="set-id" class="text-sm font-mono text-blue-400 italic tracking-widest">...</div>
+                <div class="glass p-10 rounded-[2rem] border border-white/10 mb-10">
+                    <div id="set-name" class="text-2xl font-black mb-2 uppercase">...</div>
+                    <div id="set-id" class="text-sm font-mono text-blue-400 italic">...</div>
                 </div>
-                <div class="text-[10px] text-gray-500 font-bold mb-6 uppercase tracking-widest">Визуальная тема</div>
                 <div class="flex justify-center gap-6">
-                    <button onclick="setTheme('dark')" class="w-14 h-14 rounded-2xl bg-slate-900 border-2 border-white/10 shadow-xl"></button>
-                    <button onclick="setTheme('midnight')" class="w-14 h-14 rounded-2xl bg-black border-2 border-white/10 shadow-xl"></button>
-                    <button onclick="setTheme('neon')" class="w-14 h-14 rounded-2xl bg-pink-500 border-2 border-white/10 shadow-xl"></button>
+                    <button onclick="setTheme('dark')" class="w-14 h-14 rounded-2xl bg-slate-900 border-2 border-white/10"></button>
+                    <button onclick="setTheme('midnight')" class="w-14 h-14 rounded-2xl bg-black border-2 border-white/10"></button>
+                    <button onclick="setTheme('neon')" class="w-14 h-14 rounded-2xl bg-pink-500 border-2 border-white/10"></button>
                 </div>
             </div>
         </div>
@@ -115,12 +98,8 @@
 
         function switchTab(tab) {
             ['chat-sidebar-ui', 'chat-window-ui', 'section-friends', 'section-settings'].forEach(id => document.getElementById(id).classList.add('hidden'));
-            if(tab === 'chat') { 
-                document.getElementById('chat-sidebar-ui').classList.remove('hidden'); 
-                document.getElementById('chat-window-ui').classList.remove('hidden'); 
-            } else {
-                document.getElementById('section-' + tab).classList.remove('hidden');
-            }
+            if(tab === 'chat') { document.getElementById('chat-sidebar-ui').classList.remove('hidden'); document.getElementById('chat-window-ui').classList.remove('hidden'); }
+            else document.getElementById('section-' + tab).classList.remove('hidden');
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             document.getElementById('tab-' + tab).classList.add('active');
             if(tab === 'friends') loadFriendsData();
@@ -131,60 +110,59 @@
             await clientSB.from('profiles').upsert({ id: user.id, short_id: myShortID, full_name: user.user_metadata.full_name, avatar_url: user.user_metadata.avatar_url });
             document.getElementById('my-avatar').src = user.user_metadata.avatar_url;
             document.getElementById('set-name').innerText = user.user_metadata.full_name;
-            document.getElementById('set-id').innerText = "ID: " + myShortID;
-            loadChatList();
-            loadMessages();
+            document.getElementById('set-id').innerText = "Ваш ID: " + myShortID;
+            loadChatList(); loadMessages();
         }
 
         async function addFriend() {
-            const id = document.getElementById('friend-id-input').value.trim().toUpperCase();
-            if(!id || id === myShortID) return alert("Неверный ID");
-            const { data: p } = await clientSB.from('profiles').select('id').eq('short_id', id).single();
+            const val = document.getElementById('friend-id-input').value.trim().toUpperCase();
+            if(!val || val === myShortID) return alert("Неверный ID");
+            const { data: p } = await clientSB.from('profiles').select('id').eq('short_id', val).single();
             if(!p) return alert("Пользователь не найден");
-            const { error } = await clientSB.from('friends').insert({ user_id: currentUser.id, friend_id: p.id, status: 'pending' });
-            if(error) alert("Заявка уже в пути"); else alert("Заявка отправлена!");
-            loadFriendsData();
+            await clientSB.from('friends').insert({ sender_id: currentUser.id, receiver_id: p.id });
+            alert("Заявка отправлена!"); loadFriendsData();
         }
 
-        async function acceptFriend(reqId) {
-            await clientSB.from('friends').update({ status: 'accepted' }).eq('id', reqId);
-            alert("Друг добавлен!");
-            loadFriendsData();
-            loadChatList();
+        async function acceptFriend(id) {
+            await clientSB.from('friends').update({ status: 'accepted' }).eq('id', id);
+            loadFriendsData(); loadChatList();
         }
 
         async function loadFriendsData() {
-            // Заявки МНЕ
-            const { data: req } = await clientSB.from('friends').select('id, profiles!friends_user_id_fkey(*)').eq('friend_id', currentUser.id).eq('status', 'pending');
+            // Входящие заявки (я receiver)
+            const { data: req } = await clientSB.from('friends').select('id, profiles:sender_id(*)').eq('receiver_id', currentUser.id).eq('status', 'pending');
             document.getElementById('requests-list').innerHTML = (req || []).map(r => `
-                <div class="flex justify-between items-center bg-blue-600/20 p-4 rounded-2xl border border-blue-500/30">
+                <div class="flex justify-between items-center bg-blue-600/20 p-4 rounded-xl">
                     <span class="font-bold text-sm text-white">${r.profiles.full_name}</span>
-                    <button onclick="acceptFriend(${r.id})" class="bg-green-600 px-5 py-2 rounded-xl text-[10px] font-black uppercase">Принять</button>
-                </div>`).join('') || '<p class="text-gray-600 text-xs italic">Заявок пока нет</p>';
+                    <button onclick="acceptFriend(${r.id})" class="bg-green-600 px-4 py-1 rounded text-[10px] font-black uppercase">Принять</button>
+                </div>`).join('') || '<p class="text-gray-600 text-xs italic">Заявок нет</p>';
 
-            // Мои друзья
-            const { data: fr } = await clientSB.from('friends').select('status, profiles!friends_friend_id_fkey(*)').eq('user_id', currentUser.id);
-            document.getElementById('friends-list').innerHTML = (fr || []).map(f => `
-                <div class="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/5">
-                    <img src="${f.profiles.avatar_url}" class="w-10 h-10 rounded-full border border-blue-500/30">
-                    <div class="flex-1 text-sm font-bold">${f.profiles.full_name} <span class="text-[9px] opacity-30 ml-2">(${f.status})</span></div>
+            // Мой список друзей (где я либо отправитель, либо получатель и статус accepted)
+            const { data: f1 } = await clientSB.from('friends').select('status, profiles:receiver_id(*)').eq('sender_id', currentUser.id);
+            const { data: f2 } = await clientSB.from('friends').select('status, profiles:sender_id(*)').eq('receiver_id', currentUser.id).eq('status', 'accepted');
+            
+            const all = [...(f1 || []), ...(f2 || [])];
+            document.getElementById('friends-list').innerHTML = all.map(f => `
+                <div class="flex items-center gap-4 bg-white/5 p-4 rounded-xl">
+                    <img src="${f.profiles.avatar_url}" class="w-8 h-8 rounded-full border border-white/10">
+                    <div class="flex-1 text-sm font-bold">${f.profiles.full_name} <span class="text-[9px] opacity-30 uppercase ml-2">(${f.status})</span></div>
                 </div>`).join('') || '<p class="text-gray-600 text-xs italic">Список пуст</p>';
         }
 
         async function loadChatList() {
-            const { data: f1 } = await clientSB.from('friends').select('profiles!friends_friend_id_fkey(*)').eq('user_id', currentUser.id).eq('status', 'accepted');
-            const { data: f2 } = await clientSB.from('friends').select('profiles!friends_user_id_fkey(*)').eq('friend_id', currentUser.id).eq('status', 'accepted');
+            const { data: f1 } = await clientSB.from('friends').select('profiles:receiver_id(*)').eq('sender_id', currentUser.id).eq('status', 'accepted');
+            const { data: f2 } = await clientSB.from('friends').select('profiles:sender_id(*)').eq('receiver_id', currentUser.id).eq('status', 'accepted');
             const all = [...(f1 || []).map(x => x.profiles), ...(f2 || []).map(x => x.profiles)];
             
             document.getElementById('active-chats').innerHTML = all.map(f => `
                 <div onclick="openChat('${f.id}', '${f.full_name}')" class="chat-item ${currentPartnerId === f.id ? 'active' : ''}">
-                    <img src="${f.avatar_url}" class="w-10 h-10 rounded-xl shadow-lg border border-white/10">
-                    <div class="text-sm font-bold">${f.full_name}</div>
+                    <img src="${f.avatar_url}" class="w-10 h-10 rounded-xl">
+                    <div class="text-sm font-bold text-white">${f.full_name}</div>
                 </div>`).join('');
         }
 
         function openChat(id, name) {
-            currentPartnerId = id;
+            currentPartnerId = id; 
             document.getElementById('chat-title').innerText = name;
             document.querySelectorAll('.chat-item').forEach(i => i.classList.remove('active'));
             loadMessages();
@@ -193,26 +171,29 @@
         async function loadMessages() {
             let query = clientSB.from('messagesmessages').select('*');
             if(!currentPartnerId) {
+                // Избранное (я отправитель и получателя нет)
                 query = query.eq('sender_id', currentUser.id).is('receiver_id', null);
             } else {
+                // Личка
                 query = query.or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${currentPartnerId}),and(sender_id.eq.${currentPartnerId},receiver_id.eq.${currentUser.id})`);
             }
             const { data } = await query.order('created_at', { ascending: true });
             document.getElementById('box').innerHTML = (data || []).map(m => `
-                <div class="${m.sender_id === currentUser.id ? 'msg-own shadow-blue-500/10' : 'msg-other shadow-black/20'} px-4 py-2 shadow-xl transition-all">
-                    <div class="text-[13px] leading-relaxed">${m.text}</div>
-                    <div class="text-[7px] opacity-30 text-right mt-1 font-mono">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
+                <div class="${m.sender_id === currentUser.id ? 'msg-own' : 'msg-other'} max-w-[80%] shadow-xl">
+                    <div class="text-[12px]">${m.text}</div>
                 </div>`).join('');
             document.getElementById('box').scrollTop = 99999;
         }
 
         async function send() {
-            const i = document.getElementById('msg');
-            const val = i.value.trim();
-            if(!val) return;
-            await clientSB.from('messagesmessages').insert([{ text: val, sender_id: currentUser.id, receiver_id: currentPartnerId, author_name: currentUser.user_metadata.full_name }]);
-            i.value = '';
-            loadMessages();
+            const i = document.getElementById('msg'); if(!i.value.trim()) return;
+            await clientSB.from('messagesmessages').insert([{ 
+                text: i.value, 
+                sender_id: currentUser.id, 
+                receiver_id: currentPartnerId, 
+                author_name: currentUser.user_metadata.full_name 
+            }]);
+            i.value = ''; loadMessages();
         }
 
         clientSB.auth.onAuthStateChange((ev, session) => {
@@ -221,12 +202,8 @@
                 document.getElementById('auth-ui').classList.add('hidden');
                 document.getElementById('main-ui').classList.remove('hidden');
                 syncProfile(currentUser);
-                
-                // Realtime для СООБЩЕНИЙ и ДРУЗЕЙ
-                clientSB.channel('global-updates')
-                    .on('postgres_changes', { event: '*', schema: 'public', table: 'messagesmessages' }, () => loadMessages())
-                    .on('postgres_changes', { event: '*', schema: 'public', table: 'friends' }, () => { loadFriendsData(); loadChatList(); })
-                    .subscribe();
+                clientSB.channel('gl').on('postgres_changes', { event: '*', schema: 'public', table: 'messagesmessages' }, () => loadMessages())
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'friends' }, () => { loadFriendsData(); loadChatList(); }).subscribe();
             } else {
                 document.getElementById('auth-ui').classList.remove('hidden');
                 document.getElementById('main-ui').classList.add('hidden');

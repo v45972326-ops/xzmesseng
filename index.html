@@ -20,7 +20,7 @@
     <!-- ЭКРАН ВХОДА -->
     <div id="auth-section" class="glass">
         <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-3xl font-black italic mx-auto mb-6 shadow-lg shadow-blue-500/50">X3</div>
-        <h1 class="text-2xl font-bold mb-2 italic">X3 MESSENGER</h1>
+        <h1 class="text-2xl font-bold mb-2 italic tracking-tighter">X3 MESSENGER</h1>
         <p class="text-[10px] text-gray-500 mb-8 uppercase tracking-widest font-bold">Private Google Network</p>
         
         <button onclick="login()" class="w-full bg-white text-black py-4 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-gray-200 transition active:scale-95 shadow-xl">
@@ -30,20 +30,20 @@
     </div>
 
     <!-- ЭКРАН ЧАТА -->
-    <div id="chat-section" class="hidden glass shadow-2xl" style="max-width: 800px; height: 85vh; display: flex; flex-direction: column;">
+    <div id="chat-section" class="hidden glass shadow-2xl" style="width: 90vw; max-width: 800px; height: 85vh; display: flex; flex-direction: column;">
         <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
-            <span id="u-name" class="text-[10px] font-bold text-blue-400">Загрузка...</span>
-            <button onclick="supabase.auth.signOut()" class="text-[9px] text-red-500 font-bold uppercase hover:underline">Выйти</button>
+            <span id="u-name" class="text-[10px] font-bold text-blue-400">...</span>
+            <button onclick="handleLogout()" class="text-[9px] text-red-500 font-bold uppercase">Выйти</button>
         </div>
         <div id="box" class="flex-1 overflow-y-auto mb-4 space-y-3 pr-2 flex flex-col text-left text-sm"></div>
         <div class="flex gap-2">
-            <input type="text" id="msg" placeholder="Сообщение..." class="flex-1 bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:ring-1 focus:ring-blue-500">
-            <button onclick="send()" class="bg-blue-600 px-6 rounded-2xl font-bold hover:bg-blue-700 transition">-></button>
+            <input type="text" id="msg" placeholder="Сообщение..." class="flex-1 bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:ring-1 focus:ring-blue-500 text-white">
+            <button onclick="send()" class="bg-blue-600 px-6 rounded-2xl font-bold">-></button>
         </div>
     </div>
 
     <script>
-        // ИНИЦИАЛИЗАЦИЯ (ТОЛЬКО ОДИН РАЗ!)
+        // ИНИЦИАЛИЗАЦИЯ (ОДИН РАЗ!)
         const SB_URL = "https://diijudzypthmfdlhhglr.supabase.co";
         const SB_KEY = "sb_publishable_cxF0MUM3Gn7Lc_Bi1PIAag_bwyhwANF";
         const supabase = supabase.createClient(SB_URL, SB_KEY);
@@ -51,17 +51,18 @@
         const authSection = document.getElementById('auth-section');
         const chatSection = document.getElementById('chat-section');
         const chatWindow = document.getElementById('box');
-        const msgInput = document.getElementById('msg');
-        let currentUser = null;
 
         // ФУНКЦИЯ ВХОДА
         async function login() {
-            console.log("Кнопка нажата");
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: { redirectTo: window.location.href }
             });
-            if (error) alert("Ошибка Google: " + error.message);
+            if (error) alert("Ошибка: " + error.message);
+        }
+
+        async function handleLogout() {
+            await supabase.auth.signOut();
         }
 
         // КОНТРОЛЬ СЕССИИ
@@ -70,7 +71,7 @@
                 currentUser = session.user;
                 authSection.classList.add('hidden');
                 chatSection.classList.remove('hidden');
-                document.getElementById('u-name').innerText = currentUser.email;
+                document.getElementById('u-name').innerText = session.user.email;
                 loadMessages();
             } else {
                 authSection.classList.remove('hidden');
@@ -80,31 +81,33 @@
 
         // ЗАГРУЗКА
         async function loadMessages() {
-            const { data, error } = await supabase.from('messagesmessages').select('*').order('created_at', { ascending: true });
-            if (error) return console.error(error);
+            const { data } = await supabase.from('messagesmessages').select('*').order('created_at', { ascending: true });
             chatWindow.innerHTML = '';
             if (data) data.forEach(msg => {
-                const isMine = currentUser && msg.author === currentUser.email;
-                const div = document.createElement('div');
-                div.className = `max-w-[80%] ${isMine ? 'msg-own' : 'msg-other'}`;
-                div.innerHTML = `<div class="text-[8px] opacity-40 font-bold">${msg.author.split('@')[0]}</div><div>${msg.text}</div>`;
-                chatWindow.appendChild(div);
+                const isMine = supabase.auth.getUser().then(({data}) => {
+                   const div = document.createElement('div');
+                   const isMe = data.user && data.user.email === msg.author;
+                   div.className = `max-w-[80%] ${isMe ? 'msg-own' : 'msg-other'}`;
+                   div.innerHTML = `<div class="text-[8px] opacity-40 font-bold">${msg.author.split('@')[0]}</div><div>${msg.text}</div>`;
+                   chatWindow.appendChild(div);
+                   chatWindow.scrollTop = chatWindow.scrollHeight;
+                });
             });
-            chatWindow.scrollTop = chatWindow.scrollHeight;
         }
 
         // ОТПРАВКА
         async function send() {
-            const text = msgInput.value.trim();
-            if (!text || !currentUser) return;
-            const { error } = await supabase.from('messagesmessages').insert([{ text: text, author: currentUser.email }]);
-            if (error) alert(error.message);
-            msgInput.value = '';
+            const input = document.getElementById('msg');
+            const text = input.value.trim();
+            if (!text) return;
+            const { data: { user } } = await supabase.auth.getUser();
+            await supabase.from('messagesmessages').insert([{ text: text, author: user.email }]);
+            input.value = '';
         }
 
         // РЕАЛЬНОЕ ВРЕМЯ
         supabase.channel('room1').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messagesmessages' }, () => loadMessages()).subscribe();
-        msgInput.onkeypress = e => { if (e.key === 'Enter') send(); };
+        document.getElementById('msg').onkeypress = e => { if (e.key === 'Enter') send(); };
     </script>
 </body>
 </html>

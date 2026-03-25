@@ -9,144 +9,248 @@
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --bg: #020617; --card: rgba(255,255,255,0.03); --primary: #2563eb; }
-        .theme-midnight { --bg: #000000; --primary: #1e1e1e; }
-        .theme-neon { --bg: #0f172a; --primary: #f472b6; }
-        body { background: var(--bg); color: white; font-family: sans-serif; height: 100vh; margin: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        :root { --bg: #020617; --card: rgba(255,255,255,0.03); --primary: #3b82f6; --success: #10b981; --error: #ef4444; }
+        .theme-midnight { --bg: #000000; --primary: #1e40af; }
+        .theme-neon { --bg: #0f172a; --primary: #ec4899; }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; height: 100vh; overflow: hidden; }
+        
         .glass { background: var(--card); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.1); }
-        .hidden { display: none !important; }
-        .msg-own { align-self: flex-end; background: var(--primary); border-radius: 18px 18px 0 18px; padding: 10px 15px; max-width: 80%; word-wrap: break-word; }
-        .msg-other { align-self: flex-start; background: rgba(255,255,255,0.1); border-radius: 18px 18px 18px 0; padding: 10px 15px; max-width: 80%; word-wrap: break-word; }
-        .msg-time { font-size: 0.75rem; opacity: 0.6; margin-top: 4px; }
-        .msg-read { color: #4ade80; }
-        .nav-btn { opacity: 0.3; cursor: pointer; padding: 12px; transition: 0.3s; }
-        .nav-btn.active { opacity: 1; color: var(--primary); transform: scale(1.2); }
-        #main-ui { width: 100%; max-width: 1200px; height: 95vh; display: grid; grid-template-columns: 80px 1fr; }
+        .glass-dark { background: rgba(0,0,0,0.4); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.05); }
+        
+        /* UI Layout */
+        #main-ui { display: grid; grid-template-columns: 90px 1fr; height: 100vh; }
+        .sidebar { background: rgba(0,0,0,0.6); border-right: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; align-items: center; padding: 20px 0; gap: 30px; }
+        .nav-icon { width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 16px; transition: all 0.3s; opacity: 0.5; font-size: 24px; }
+        .nav-icon:hover, .nav-icon.active { opacity: 1; background: rgba(59, 130, 246, 0.2); color: var(--primary); transform: scale(1.1); }
+        
+        .user-avatar { width: 50px; height: 50px; border-radius: 50%; border: 2px solid var(--primary); cursor: pointer; object-fit: cover; transition: 0.3s; }
+        .user-avatar:hover { transform: scale(1.1); box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
+        
+        /* Chat View */
+        .chat-container { display: flex; height: 100vh; overflow: hidden; }
+        .chat-sidebar { width: 320px; background: rgba(0,0,0,0.3); border-right: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; overflow-y: auto; }
+        .chat-main { flex: 1; display: flex; flex-direction: column; }
+        
+        .chat-item { padding: 12px 16px; margin: 8px 12px; border-radius: 12px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 12px; position: relative; }
+        .chat-item:hover { background: rgba(255,255,255,0.08); transform: translateX(4px); }
+        .chat-item.active { background: rgba(59, 130, 246, 0.2); border-left: 3px solid var(--primary); }
+        .chat-item img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,0.1); }
+        .chat-item-content { flex: 1; min-width: 0; }
+        .chat-item-name { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chat-item-preview { font-size: 12px; opacity: 0.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .unread-badge { width: 8px; height: 8px; background: var(--error); border-radius: 50%; }
+        
+        .chat-header { padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .chat-title { font-weight: 700; font-size: 16px; color: var(--primary); }
+        .chat-actions { display: flex; gap: 16px; font-size: 18px; opacity: 0.6; }
+        .chat-actions i { cursor: pointer; transition: 0.2s; }
+        .chat-actions i:hover { opacity: 1; color: var(--primary); }
+        
+        .messages-box { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+        .message { display: flex; flex-direction: column; padding: 10px 14px; border-radius: 14px; max-width: 70%; word-wrap: break-word; animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .message.own { align-self: flex-end; background: var(--primary); border-radius: 14px 14px 0 14px; color: white; }
+        .message.other { align-self: flex-start; background: rgba(255,255,255,0.1); border-radius: 14px 14px 14px 0; }
+        .message-time { font-size: 11px; opacity: 0.7; margin-top: 4px; }
+        .message img, .message video, .message audio { max-width: 100%; border-radius: 10px; margin-top: 6px; }
+        
+        .input-area { padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; gap: 12px; align-items: flex-end; }
+        .input-area input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 12px 16px; border-radius: 12px; color: white; outline: none; transition: 0.2s; }
+        .input-area input:focus { border-color: var(--primary); background: rgba(255,255,255,0.08); }
+        .input-area button { width: 40px; height: 40px; background: var(--primary); border: none; border-radius: 10px; color: white; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
+        .input-area button:hover { background: rgb(59, 130, 246, 0.8); }
         
         /* Pixel Battle */
-        .pixel-wrapper { position: relative; width: 100%; height: 100%; overflow: hidden; background: #111; border-radius: 20px; }
-        #pixel-canvas { image-rendering: pixelated; position: absolute; transform-origin: 0 0; cursor: crosshair; background: white; }
-        #pixel-overlay { position: absolute; pointer-events: none; opacity: 0.3; }
-        .pixel-controls { position: absolute; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 10; }
-        .pixel-info { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.7); padding: 10px 15px; border-radius: 10px; font-size: 12px; z-index: 10; }
-
-        /* Chat items */
-        .chat-item { display: flex; align-items: center; gap: 12px; padding: 12px; margin: 0 8px; border-radius: 16px; cursor: pointer; transition: 0.3s; position: relative; }
-        .chat-item:hover { background: rgba(255, 255, 255, 0.08); }
-        .chat-item.blocked { opacity: 0.5; }
-        .unread-badge { position: absolute; top: 8px; right: 8px; background: #ef4444; width: 8px; height: 8px; border-radius: 50%; }
+        .pixel-wrapper { position: relative; width: 100%; height: 100%; overflow: hidden; background: #0a0a0a; border-radius: 16px; }
+        #pixel-canvas { image-rendering: pixelated; position: absolute; transform-origin: 0 0; cursor: crosshair; }
+        #pixel-overlay { position: absolute; pointer-events: none; }
+        .pixel-controls { position: absolute; bottom: 30px; right: 30px; display: flex; gap: 12px; z-index: 10; }
+        .pixel-btn { width: 50px; height: 50px; background: var(--primary); border: none; border-radius: 12px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .pixel-btn:hover { transform: scale(1.1); }
+        .pixel-info { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.8); padding: 12px 16px; border-radius: 10px; font-size: 12px; z-index: 10; font-mono; }
         
-        /* Animation */
-        .rec-pulse { animation: pulse 1s infinite; color: #ef4444; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-        .fade-in { animation: fadeIn 0.3s ease-out; }
-        video { width: 100%; max-width: 300px; border-radius: 15px; background: black; }
+        /* Friends View */
+        .friends-container { padding: 20px; }
+        .friend-card { display: flex; justify-content: space-between; align-items: center; padding: 14px; margin-bottom: 10px; background: rgba(255,255,255,0.05); border-radius: 12px; transition: 0.2s; }
+        .friend-card:hover { background: rgba(255,255,255,0.08); }
+        .friend-info { display: flex; align-items: center; gap: 12px; flex: 1; }
+        .friend-info img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+        .friend-actions { display: flex; gap: 8px; }
+        .friend-actions button { background: rgba(255,255,255,0.1); border: none; padding: 6px 12px; border-radius: 8px; color: white; cursor: pointer; font-size: 12px; transition: 0.2s; }
+        .friend-actions button:hover { background: var(--primary); }
+        
+        /* Settings */
+        .settings-container { padding: 40px; display: flex; justify-content: center; }
+        .settings-card { background: var(--card); padding: 30px; border-radius: 20px; max-width: 500px; width: 100%; }
+        .avatar-upload { width: 100px; height: 100px; margin: 0 auto 20px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); cursor: pointer; }
+        .settings-input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 12px 16px; border-radius: 10px; color: white; margin-bottom: 16px; outline: none; }
+        .settings-input:focus { border-color: var(--primary); }
+        .settings-label { font-size: 12px; color: rgba(255,255,255,0.6); text-transform: uppercase; margin-bottom: 4px; }
+        .theme-selector { display: flex; gap: 12px; margin-top: 20px; }
+        .theme-btn { width: 50px; height: 50px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer; transition: 0.2s; }
+        .theme-btn:hover { border-color: var(--primary); }
+        .theme-btn-dark { background: linear-gradient(135deg, #1e293b, #0f172a); }
+        .theme-btn-midnight { background: #000; }
+        .theme-btn-neon { background: linear-gradient(135deg, #ec4899, #f472b6); }
         
         /* Notifications */
-        .notification { position: fixed; top: 20px; right: 20px; background: rgba(0,0,0,0.9); border-left: 4px solid var(--primary); padding: 15px 20px; border-radius: 8px; z-index: 1000; animation: slideIn 0.3s ease-out; }
-        @keyframes slideIn { from { transform: translateX(400px); } to { transform: translateX(0); } }
-        .notification.success { border-left-color: #4ade80; }
-        .notification.error { border-left-color: #ef4444; }
-        .notification.warning { border-left-color: #eab308; }
+        .notification { position: fixed; top: 20px; right: 20px; background: rgba(0,0,0,0.95); border-left: 4px solid var(--primary); padding: 16px 20px; border-radius: 10px; z-index: 1000; animation: slideIn 0.3s ease-out; max-width: 350px; }
+        @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .notification.success { border-left-color: var(--success); }
+        .notification.error { border-left-color: var(--error); }
+        .notification.warning { border-left-color: #f59e0b; }
+        
+        .hidden { display: none !important; }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
     </style>
 </head>
 <body>
 
-    <div id="auth-ui" class="glass p-12 rounded-[3rem] text-center w-full max-w-sm mx-4 shadow-2xl">
-        <div class="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center text-4xl font-black italic mx-auto mb-8 shadow-xl">X3</div>
-        <button onclick="login()" class="w-full bg-white text-black py-4 rounded-2xl font-bold flex items-center justify-center gap-3 transition hover:scale-105">
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20"> Войти через Google
-        </button>
+    <!-- AUTH UI -->
+    <div id="auth-ui" class="flex items-center justify-center h-screen bg-gradient-to-br from-slate-900 to-slate-950">
+        <div class="glass p-16 rounded-3xl text-center max-w-sm">
+            <div class="w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-600 rounded-3xl flex items-center justify-center text-5xl font-black italic mx-auto mb-8 shadow-2xl">X3</div>
+            <h1 class="text-3xl font-black mb-2">X3 Messenger</h1>
+            <p class="text-gray-400 mb-8">Ультимативный мессенджер с пиксель-артом</p>
+            <button onclick="login()" class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-3 transition hover:shadow-lg hover:from-blue-600 hover:to-blue-700">
+                <i class="fa-brands fa-google"></i> Войти через Google
+            </button>
+        </div>
     </div>
 
-    <div id="main-ui" class="hidden glass sm:rounded-[3rem] overflow-hidden shadow-2xl">
+    <!-- MAIN UI -->
+    <div id="main-ui" class="hidden">
         
-        <div class="bg-black/40 flex flex-col items-center py-8 border-r border-white/5">
-            <img id="my-avatar" class="w-12 h-12 rounded-full mb-10 border-2 border-blue-500 shadow-lg cursor-pointer" onclick="switchTab('settings')">
-            <div class="flex flex-col gap-8 flex-1 text-2xl text-white">
-                <i onclick="switchTab('chat')" id="tab-chat" class="fa-solid fa-comment-dots nav-btn active"></i>
-                <i onclick="switchTab('friends')" id="tab-friends" class="fa-solid fa-user-plus nav-btn"></i>
-                <i onclick="switchTab('pixel')" id="tab-pixel" class="fa-solid fa-palette nav-btn"></i>
-                <i onclick="switchTab('settings')" id="tab-settings" class="fa-solid fa-gear nav-btn"></i>
+        <!-- LEFT SIDEBAR -->
+        <div class="sidebar">
+            <img id="my-avatar" class="user-avatar" onclick="switchTab('settings')" title="Профиль">
+            <div id="nav-buttons" style="display: flex; flex-direction: column; gap: 20px; width: 100%;">
+                <div class="nav-icon active" onclick="switchTab('chat')" title="Чаты"><i class="fa-solid fa-comment-dots"></i></div>
+                <div class="nav-icon" onclick="switchTab('friends')" title="Друзья"><i class="fa-solid fa-user-group"></i></div>
+                <div class="nav-icon" onclick="switchTab('pixel')" title="Pixel Battle"><i class="fa-solid fa-palette"></i></div>
+                <div class="nav-icon" onclick="switchTab('settings')" title="Настройки"><i class="fa-solid fa-gear"></i></div>
             </div>
-            <button onclick="logout()" class="text-red-500 p-4 opacity-50 hover:opacity-100 transition"><i class="fa-solid fa-power-off"></i></button>
+            <button onclick="logout()" style="margin-top: auto; background: rgba(239, 68, 68, 0.2); border: none; color: #ef4444; width: 50px; height: 50px; border-radius: 12px; cursor: pointer; font-size: 20px; transition: 0.2s;" onmouseover="this.style.background='rgba(239, 68, 68, 0.4)'" onmouseout="this.style.background='rgba(239, 68, 68, 0.2)'">
+                <i class="fa-solid fa-sign-out-alt"></i>
+            </button>
         </div>
 
-        <div class="flex flex-1 overflow-hidden">
+        <!-- MAIN CONTENT -->
+        <div style="display: flex; flex-direction: column; height: 100vh; overflow: hidden;">
             
-            <div id="chat-sidebar-ui" class="flex flex-row flex-1 overflow-hidden">
-                <div class="w-72 bg-black/20 border-r border-white/5 overflow-y-auto">
-                    <div class="p-6 text-[10px] font-black uppercase text-blue-500 tracking-[0.3em]">Messenger</div>
-                    <div onclick="openChat(null, 'Избранное')" id="chat-fav" class="flex items-center gap-4 p-4 mx-2 rounded-2xl cursor-pointer transition hover:bg-white/5 mb-1 active">
-                        <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg"><i class="fa-solid fa-bookmark text-white"></i></div>
-                        <div class="text-sm font-bold">Избранное</div>
-                    </div>
-                    <div id="active-chats"></div>
-                </div>
-
-                <div class="flex-1 flex flex-col bg-black/10 relative">
-                    <header class="p-5 border-b border-white/5 flex justify-between items-center bg-white/5">
-                        <span id="chat-title" class="font-bold text-sm text-blue-400 uppercase italic">Избранное</span>
-                        <div id="chat-actions" class="hidden flex gap-5 text-gray-400">
-                            <i onclick="startCall(false)" class="fa-solid fa-phone hover:text-green-500 cursor-pointer"></i>
-                            <i onclick="startCall(true)" class="fa-solid fa-video hover:text-blue-500 cursor-pointer"></i>
-                            <i onclick="deleteChatForEveryone()" class="fa-solid fa-trash hover:text-red-500 cursor-pointer" title="Удалить для всех"></i>
-                            <i onclick="blockUser()" class="fa-solid fa-ban hover:text-red-500 cursor-pointer" title="Блок"></i>
+            <!-- CHAT VIEW -->
+            <div id="view-chat" class="chat-container">
+                <div class="chat-sidebar">
+                    <div style="padding: 16px 12px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <div style="font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">Чаты</div>
+                        <div onclick="openChat(null, 'Избранное')" id="fav-chat" class="chat-item active" style="margin-left: 0; margin-right: 0;">
+                            <i class="fa-solid fa-bookmark" style="font-size: 20px;"></i>
+                            <span style="font-weight: 600;">Избранное</span>
                         </div>
-                    </header>
+                    </div>
+                    <div id="active-chats" style="flex: 1; overflow-y: auto;"></div>
+                </div>
+                
+                <div class="chat-main">
+                    <div class="chat-header">
+                        <div class="chat-title">Избранное</div>
+                        <div id="chat-actions" class="chat-actions hidden">
+                            <i onclick="startCall(false)" title="Аудио звонок"><i class="fa-solid fa-phone"></i></i>
+                            <i onclick="startCall(true)" title="Видео звонок"><i class="fa-solid fa-video"></i></i>
+                            <i onclick="deleteChatForEveryone()" title="Удалить чат"><i class="fa-solid fa-trash"></i></i>
+                        </div>
+                    </div>
+                    
+                    <div id="messages-box" class="messages-box"></div>
+                    
+                    <div class="input-area">
+                        <label class="cursor-pointer opacity-50 hover:opacity-100 transition" style="font-size: 18px;"><i class="fa-solid fa-paperclip"></i><input type="file" id="fileInput" class="hidden" onchange="uploadMedia()"></label>
+                        <button id="micBtn" class="opacity-50 hover:opacity-100 transition" style="background: none; border: none; color: white; font-size: 18px; cursor: pointer;"><i class="fa-solid fa-microphone"></i></button>
+                        <input type="text" id="msg" placeholder="Написать сообщение..." class="settings-input" style="margin-bottom: 0;">
+                        <button onclick="send()" style="background: var(--primary); border: none; color: white; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                </div>
+                
+                <div id="video-container" class="hidden absolute inset-0 z-50 bg-black p-4 flex flex-col items-center">
+                    <video id="remote-video" autoplay style="width: 100%; height: 100%; object-fit: cover;"></video>
+                    <video id="local-video" autoplay muted style="width: 120px; height: 120px; position: absolute; bottom: 20px; right: 20px; border: 2px solid white; border-radius: 10px;"></video>
+                    <button onclick="location.reload()" style="background: #ef4444; color: white; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 700; cursor: pointer; position: absolute; bottom: 20px; left: 20px;">ЗАВЕРШИТЬ ЗВОНОК</button>
+                </div>
+            </div>
 
-                    <div id="video-container" class="hidden absolute inset-0 z-50 bg-black p-4 flex flex-col items-center">
-                        <video id="remote-video" autoplay class="h-full"></video>
-                        <video id="local-video" autoplay muted class="w-32 absolute bottom-20 right-10 border border-white"></video>
-                        <button onclick="location.reload()" class="bg-red-600 px-8 py-3 rounded-full mt-4 font-bold">ЗАВЕРШИТЬ</button>
+            <!-- FRIENDS VIEW -->
+            <div id="view-friends" class="hidden flex-1 overflow-y-auto">
+                <div class="friends-container">
+                    <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 20px; color: var(--primary);">Поиск друзей</h2>
+                    
+                    <div style="display: flex; gap: 12px; margin-bottom: 30px;">
+                        <input type="text" id="friend-id-input" placeholder="Введи ID друга (X3-XXXX)" class="settings-input" style="margin-bottom: 0; flex: 1;">
+                        <button onclick="addFriend()" style="background: var(--primary); border: none; color: white; padding: 12px 24px; border-radius: 10px; font-weight: 700; cursor: pointer; white-space: nowrap;">Найти</button>
                     </div>
 
-                    <div id="box" class="flex-1 overflow-y-auto p-6 space-y-4 flex flex-col text-sm"></div>
-
-                    <div class="p-4 flex gap-4 items-center bg-black/20">
-                        <label class="cursor-pointer text-gray-500 hover:text-white"><i class="fa-solid fa-paperclip text-xl"></i><input type="file" id="fileInput" class="hidden" onchange="uploadMedia()"></label>
-                        <button id="micBtn" class="text-gray-500 hover:text-red-500"><i class="fa-solid fa-microphone text-xl" id="micIcon"></i></button>
-                        <input type="text" id="msg" placeholder="Написать..." class="flex-1 bg-white/5 border-none p-3 rounded-xl outline-none focus:ring-1 focus:ring-blue-500 transition">
-                        <button onclick="send()" class="bg-blue-600 w-12 h-12 rounded-xl flex items-center justify-center hover:bg-blue-500 transition shadow-lg"><i class="fa-solid fa-paper-plane"></i></button>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                        <div>
+                            <h3 style="font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.5); text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.05em;">Входящие заявки</h3>
+                            <div id="requests-list"></div>
+                        </div>
+                        <div>
+                            <h3 style="font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.5); text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.05em;">Мои друзья</h3>
+                            <div id="friends-list"></div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div id="section-pixel" class="hidden flex-1 flex flex-col p-6 overflow-hidden">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-black italic">PIXEL BATTLE</h2>
-                    <input type="color" id="pixel-color" value="#2563eb" class="bg-transparent border-none w-10 h-10">
+            <!-- PIXEL BATTLE VIEW -->
+            <div id="view-pixel" class="hidden flex-1 flex flex-col p-6 overflow-hidden">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h2 style="font-size: 24px; font-weight: 700; color: var(--primary);">PIXEL BATTLE</h2>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <input type="color" id="pixel-color" value="#3b82f6" style="width: 50px; height: 40px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; cursor: pointer; background: transparent;">
+                        <span style="font-size: 12px; opacity: 0.6;">ЛКМ: Рисовать | Shift+ЛКМ/ПКМ: Двигать | Скролл: Зум</span>
+                    </div>
                 </div>
-                <div class="pixel-wrapper glass" id="pixel-wrapper">
+                <div class="pixel-wrapper glass-dark" id="pixel-wrapper">
                     <canvas id="pixel-canvas" width="500" height="500"></canvas>
                 </div>
-                <div class="text-[9px] text-gray-500 mt-2">ЛКМ: Рисовать | Shift+ЛКМ или ПКМ: Двигать | Колесико: Зум</div>
             </div>
 
-            <div id="section-friends" class="hidden flex-1 p-10 overflow-y-auto">
-                <h2 class="text-xl font-black mb-8 italic text-blue-400">ПОИСК ДРУЗЕЙ</h2>
-                <div class="flex gap-4 mb-10"><input type="text" id="friend-id-input" placeholder="X3-XXXX" class="flex-1 bg-white/5 border border-white/10 p-4 rounded-2xl outline-none text-sm font-mono text-blue-400"><button onclick="addFriend()" class="bg-blue-600 px-10 rounded-2xl font-bold uppercase text-xs">Найти</button></div>
-                <div class="grid grid-cols-2 gap-10">
-                    <div><h3 class="text-[10px] font-bold text-gray-500 uppercase mb-4 tracking-widest">Заявки</h3><div id="requests-list" class="space-y-3"></div></div>
-                    <div><h3 class="text-[10px] font-bold text-gray-500 uppercase mb-4 tracking-widest">Друзья</h3><div id="friends-list" class="space-y-3"></div></div>
-                </div>
-            </div>
-
-            <div id="section-settings" class="hidden flex-1 p-10 overflow-y-auto text-center">
-                <div class="glass p-10 rounded-[3rem] border border-white/10 mb-10">
-                    <div class="relative w-24 h-24 mx-auto mb-6 group">
-                        <img id="set-avatar" class="w-full h-full rounded-2xl object-cover border-2 border-blue-500 shadow-xl">
-                        <label class="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition rounded-2xl cursor-pointer"><i class="fa-solid fa-camera"></i><input type="file" class="hidden" onchange="updateAvatar(this)"></label>
+            <!-- SETTINGS VIEW -->
+            <div id="view-settings" class="hidden flex-1 overflow-y-auto">
+                <div class="settings-container">
+                    <div class="settings-card">
+                        <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 24px;">Мой профиль</h2>
+                        
+                        <div style="position: relative; width: 100px; height: 100px; margin: 0 auto 20px; cursor: pointer; group;">
+                            <img id="set-avatar" class="avatar-upload" onclick="document.getElementById('avatar-input').click()">
+                            <label style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); opacity: 0; transition: 0.2s; border-radius: 50%; cursor: pointer;" class="hover:opacity-100">
+                                <i class="fa-solid fa-camera" style="color: white; font-size: 24px;"></i>
+                                <input type="file" id="avatar-input" class="hidden" onchange="updateAvatar(this)">
+                            </label>
+                        </div>
+                        
+                        <div class="settings-label">Ник</div>
+                        <input type="text" id="set-nick" class="settings-input" placeholder="Введи своё имя">
+                        
+                        <div class="settings-label">Твой ID</div>
+                        <div id="set-id" style="background: rgba(59, 130, 246, 0.2); padding: 12px 16px; border-radius: 10px; font-family: monospace; font-weight: 600; margin-bottom: 20px; cursor: pointer;" title="Клик чтобы скопировать">X3-...</div>
+                        
+                        <button onclick="updateProfileName()" style="width: 100%; background: var(--primary); border: none; color: white; padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer; margin-bottom: 24px; transition: 0.2s;">Сохранить профиль</button>
+                        
+                        <div class="settings-label">Тема</div>
+                        <div class="theme-selector">
+                            <button class="theme-btn theme-btn-dark" onclick="setTheme('dark')" title="Dark"></button>
+                            <button class="theme-btn theme-btn-midnight" onclick="setTheme('midnight')" title="Midnight"></button>
+                            <button class="theme-btn theme-btn-neon" onclick="setTheme('neon')" title="Neon"></button>
+                        </div>
                     </div>
-                    <input type="text" id="set-nick" class="bg-transparent text-xl font-black text-center outline-none border-b border-white/10 mb-4 w-full">
-                    <div id="set-id" class="text-[10px] font-mono text-blue-400 mb-6 uppercase">ID: ...</div>
-                    <button onclick="updateProfileName()" class="bg-blue-600 px-6 py-2 rounded-full font-bold text-[10px] uppercase">Сохранить ник</button>
-                </div>
-                <div class="flex justify-center gap-6">
-                    <button onclick="setTheme('dark')" class="w-12 h-12 rounded-xl bg-slate-900 border border-white/10"></button>
-                    <button onclick="setTheme('midnight')" class="w-12 h-12 rounded-xl bg-black border border-white/10"></button>
-                    <button onclick="setTheme('neon')" class="w-12 h-12 rounded-xl bg-pink-500 border border-white/10"></button>
                 </div>
             </div>
 
@@ -158,26 +262,396 @@
         const REDIRECT_URL = window.location.origin + window.location.pathname;
         let currentUser = null, myShortID = "", currentPartnerId = null, peer = null;
         let scale = 1, offsetX = 0, offsetY = 0, isPanning = false, isDrawing = false;
-        let unreadCounts = {};
-
-        // --- NOTIFICATIONS ---
-        function showNotification(msg, type = 'info') {
-            const notif = document.createElement('div');
-            notif.className = `notification fade-in ${type}`;
-            notif.textContent = msg;
-            document.body.appendChild(notif);
-            setTimeout(() => notif.remove(), 3000);
-        }
-
-        async function login() { await clientSB.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: REDIRECT_URL } }); }
-        async function logout() { await clientSB.auth.signOut(); window.location.reload(); }
-
-        // --- PIXEL BATTLE ---
         const canvas = document.getElementById('pixel-canvas');
         const wrapper = document.getElementById('pixel-wrapper');
         const ctx = canvas.getContext('2d');
 
-        // Отрисовка сетки
+        // ============= NOTIFICATIONS =============
+        function showNotification(msg, type = 'info') {
+            const notif = document.createElement('div');
+            notif.className = `notification ${type}`;
+            notif.innerHTML = msg;
+            document.body.appendChild(notif);
+            setTimeout(() => notif.remove(), 3000);
+        }
+
+        // ============= AUTH =============
+        async function login() { 
+            try {
+                await clientSB.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: REDIRECT_URL } }); 
+            } catch(e) {
+                console.error('Login error:', e);
+                showNotification('Ошибка входа: ' + e.message, 'error');
+            }
+        }
+
+        async function logout() { 
+            try {
+                await clientSB.auth.signOut(); 
+                window.location.reload(); 
+            } catch(e) {
+                console.error('Logout error:', e);
+            }
+        }
+
+        // ============= PROFILE SYNC =============
+        async function syncProfile(user) {
+            try {
+                console.log('🔄 Синхронизация профиля...');
+                myShortID = "X3-" + user.id.slice(0, 4).toUpperCase();
+                
+                const { data: existing } = await clientSB.from('profiles').select('*').eq('id', user.id).single();
+                
+                if (!existing) {
+                    console.log('👤 Создаём новый профиль...');
+                    await clientSB.from('profiles').insert({ 
+                        id: user.id, 
+                        short_id: myShortID, 
+                        full_name: user.user_metadata.full_name || 'Пользователь', 
+                        avatar_url: user.user_metadata.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`,
+                        peer_id: user.id
+                    });
+                }
+
+                const { data: profile } = await clientSB.from('profiles').select('*').eq('id', user.id).single();
+                console.log('✅ Профиль синхронизирован:', profile);
+
+                document.getElementById('my-avatar').src = profile.avatar_url;
+                document.getElementById('set-avatar').src = profile.avatar_url;
+                document.getElementById('set-nick').value = profile.full_name;
+                document.getElementById('set-id').innerText = profile.short_id;
+
+                peer = new Peer(user.id);
+                peer.on('call', async (call) => {
+                    if(confirm("Входящий звонок! Принять?")) {
+                        try {
+                            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                            document.getElementById('video-container').classList.remove('hidden');
+                            document.getElementById('local-video').srcObject = stream;
+                            call.answer(stream);
+                            call.on('stream', rem => { document.getElementById('remote-video').srcObject = rem; });
+                        } catch(e) { showNotification('Нет доступа к камере', 'error'); }
+                    }
+                });
+
+                loadChatList();
+                loadFriendsData();
+                showNotification('✅ Добро пожаловать в X3!', 'success');
+            } catch(e) {
+                console.error('❌ Ошибка синхронизации:', e);
+                showNotification('Ошибка синхронизации профиля: ' + e.message, 'error');
+            }
+        }
+
+        // ============= CHATS =============
+        async function loadChatList() {
+            try {
+                console.log('📋 Загружаем список чатов...');
+                
+                const { data: f1 } = await clientSB.from('friends')
+                    .select('id, receiver_id, profiles!receiver_id(id, full_name, avatar_url)')
+                    .eq('sender_id', currentUser.id)
+                    .eq('status', 'accepted');
+                
+                const { data: f2 } = await clientSB.from('friends')
+                    .select('id, sender_id, profiles!sender_id(id, full_name, avatar_url)')
+                    .eq('receiver_id', currentUser.id)
+                    .eq('status', 'accepted');
+                
+                const allChats = [...(f1 || []), ...(f2 || [])];
+                console.log('📦 Чатов найдено:', allChats.length);
+
+                const html = allChats.map(f => `
+                    <div class="chat-item" onclick="openChat('${f.profiles.id}', '${f.profiles.full_name}')">
+                        <img src="${f.profiles.avatar_url}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                        <div class="chat-item-content">
+                            <div class="chat-item-name">${f.profiles.full_name}</div>
+                            <div class="chat-item-preview">Нажми чтобы открыть</div>
+                        </div>
+                    </div>
+                `).join('');
+                
+                document.getElementById('active-chats').innerHTML = html || '<div style="padding: 16px; opacity: 0.5; text-align: center; font-size: 12px;">Нет активных чатов. Найди друзей!</div>';
+            } catch(e) {
+                console.error('❌ Ошибка loadChatList:', e);
+                showNotification('Ошибка загрузки чатов: ' + e.message, 'error');
+            }
+        }
+
+        async function openChat(id, name) {
+            currentPartnerId = id;
+            document.querySelectorAll('.chat-item').forEach(item => item.classList.remove('active'));
+            if(id === null) {
+                document.getElementById('fav-chat').classList.add('active');
+            } else {
+                event.target.closest('.chat-item').classList.add('active');
+            }
+            
+            document.querySelector('.chat-title').innerText = name;
+            document.getElementById('chat-actions').classList.toggle('hidden', !id);
+            
+            loadMessages();
+        }
+
+        async function loadMessages() {
+            try {
+                let q = clientSB.from('messages').select('*');
+                if(!currentPartnerId) q = q.eq('sender_id', currentUser.id).is('receiver_id', null);
+                else q = q.or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${currentPartnerId}),and(sender_id.eq.${currentPartnerId},receiver_id.eq.${currentUser.id})`);
+                
+                const { data } = await q.order('created_at', { ascending: true });
+                
+                document.getElementById('messages-box').innerHTML = (data || []).map(m => {
+                    let content = m.text;
+                    if(m.type === 'image') content = `<img src="${m.text}" style="max-width: 100%; border-radius: 10px;">`;
+                    if(m.type === 'video') content = `<video src="${m.text}" controls style="max-width: 100%; border-radius: 10px;"></video>`;
+                    if(m.type === 'audio') content = `<audio src="${m.text}" controls style="width: 100%;"></audio>`;
+                    if(m.type === 'file') content = `<a href="${m.text}" target="_blank" style="color: var(--primary); text-decoration: underline;">📄 Файл</a>`;
+                    
+                    const time = new Date(m.created_at).toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
+                    
+                    return `<div class="message ${m.sender_id === currentUser.id ? 'own' : 'other'}">
+                        <div>${content}</div>
+                        <div class="message-time">${time}</div>
+                    </div>`;
+                }).join('');
+                
+                setTimeout(() => {
+                    document.getElementById('messages-box').scrollTop = document.getElementById('messages-box').scrollHeight;
+                }, 100);
+            } catch(e) {
+                console.error('❌ Ошибка loadMessages:', e);
+            }
+        }
+
+        async function send() {
+            const val = document.getElementById('msg').value.trim();
+            if(!val) return;
+            if(currentPartnerId === undefined) { showNotification('Выбери чат', 'warning'); return; }
+            
+            try {
+                await clientSB.from('messages').insert([{
+                    text: val,
+                    sender_id: currentUser.id,
+                    receiver_id: currentPartnerId,
+                    author_name: currentUser.user_metadata.full_name,
+                    type: 'text'
+                }]);
+                document.getElementById('msg').value = '';
+                loadMessages();
+                showNotification('✓ Отправлено', 'success');
+            } catch(e) {
+                console.error('❌ Ошибка send:', e);
+                showNotification('Ошибка отправки: ' + e.message, 'error');
+            }
+        }
+
+        async function deleteChatForEveryone() {
+            if(!currentPartnerId) { showNotification('Нет активного чата', 'warning'); return; }
+            if(confirm("Удалить всю переписку?")) {
+                try {
+                    await clientSB.from('messages').delete().or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${currentPartnerId}),and(sender_id.eq.${currentPartnerId},receiver_id.eq.${currentUser.id})`);
+                    loadMessages();
+                    showNotification('✓ Чат удалён', 'success');
+                } catch(e) { showNotification('Ошибка удаления: ' + e.message, 'error'); }
+            }
+        }
+
+        // ============= MEDIA =============
+        async function uploadMedia() {
+            if(!currentPartnerId && currentPartnerId !== null) { showNotification('Выбери чат', 'warning'); return; }
+            const file = document.getElementById('fileInput').files[0];
+            if(!file) return;
+            try {
+                const name = `media/${Date.now()}_${file.name}`;
+                await clientSB.storage.from('uploads').upload(name, file);
+                const { data } = clientSB.storage.from('uploads').getPublicUrl(name);
+                let type = file.type.startsWith('image') ? 'image' : (file.type.startsWith('video') ? 'video' : 'file');
+                await clientSB.from('messages').insert([{ 
+                    text: data.publicUrl, 
+                    sender_id: currentUser.id, 
+                    receiver_id: currentPartnerId, 
+                    type, 
+                    author_name: currentUser.user_metadata.full_name 
+                }]);
+                document.getElementById('fileInput').value = '';
+                loadMessages();
+                showNotification('✓ Файл отправлен!', 'success');
+            } catch(e) { showNotification('Ошибка: ' + e.message, 'error'); }
+        }
+
+        // ============= VOICE =============
+        let recorder;
+        document.getElementById('micBtn').onclick = async () => {
+            if(!currentPartnerId && currentPartnerId !== null) { showNotification('Выбери чат', 'warning'); return; }
+            const icon = document.getElementById('micBtn').querySelector('i');
+            if(!recorder || recorder.state === 'inactive') {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    recorder = new MediaRecorder(stream);
+                    let chunks = [];
+                    recorder.ondataavailable = e => chunks.push(e.data);
+                    recorder.onstop = async () => {
+                        try {
+                            const blob = new Blob(chunks, { type: 'audio/webm' });
+                            const name = `voice/${Date.now()}.webm`;
+                            await clientSB.storage.from('uploads').upload(name, blob);
+                            const { data } = clientSB.storage.from('uploads').getPublicUrl(name);
+                            await clientSB.from('messages').insert([{ 
+                                text: data.publicUrl, 
+                                sender_id: currentUser.id, 
+                                receiver_id: currentPartnerId, 
+                                type: 'audio', 
+                                author_name: currentUser.user_metadata.full_name 
+                            }]);
+                            loadMessages();
+                            showNotification('✓ Голосовое отправлено!', 'success');
+                        } catch(e) { showNotification('Ошибка: ' + e.message, 'error'); }
+                    };
+                    recorder.start();
+                    icon.classList.add('fa-beat');
+                    showNotification('🔴 Запись началась...', 'info');
+                } catch(e) { showNotification('Нет доступа к микрофону', 'error'); }
+            } else {
+                recorder.stop();
+                icon.classList.remove('fa-beat');
+            }
+        };
+
+        async function startCall(v) {
+            if(!currentPartnerId) { showNotification('Выбери контакт', 'warning'); return; }
+            try {
+                const s = await navigator.mediaDevices.getUserMedia({ video: v, audio: true });
+                document.getElementById('video-container').classList.remove('hidden');
+                document.getElementById('local-video').srcObject = s;
+                const call = peer.call(currentPartnerId, s);
+                call.on('stream', rem => { document.getElementById('remote-video').srcObject = rem; });
+                showNotification(v ? '📹 Видео звонок начал' : '☎️ Аудио звонок начал', 'success');
+            } catch(e) { showNotification('Ошибка звонка: ' + e.message, 'error'); }
+        }
+
+        // ============= FRIENDS =============
+        async function loadFriendsData() {
+            try {
+                console.log('👥 Загружаем друзей...');
+                
+                const { data: req } = await clientSB.from('friends')
+                    .select('id, sender_id, profiles!sender_id(id, full_name, avatar_url)')
+                    .eq('receiver_id', currentUser.id)
+                    .eq('status', 'pending');
+                
+                document.getElementById('requests-list').innerHTML = (req || []).map(r => 
+                    `<div class="friend-card">
+                        <div class="friend-info">
+                            <img src="${r.profiles.avatar_url}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                            <span>${r.profiles.full_name}</span>
+                        </div>
+                        <button onclick="acceptFriend(${r.id})" style="background: var(--success); color: white;">Принять</button>
+                    </div>`
+                ).join('') || '<div style="opacity: 0.5; font-size: 12px;">Заявок нет</div>';
+                
+                const { data: f1 } = await clientSB.from('friends')
+                    .select('id, receiver_id, profiles!receiver_id(id, full_name, avatar_url)')
+                    .eq('sender_id', currentUser.id)
+                    .eq('status', 'accepted');
+                
+                const { data: f2 } = await clientSB.from('friends')
+                    .select('id, sender_id, profiles!sender_id(id, full_name, avatar_url)')
+                    .eq('receiver_id', currentUser.id)
+                    .eq('status', 'accepted');
+                
+                const allFriends = [...(f1 || []), ...(f2 || [])];
+                console.log('👥 Друзей найдено:', allFriends.length);
+                
+                document.getElementById('friends-list').innerHTML = allFriends.map(f => 
+                    `<div class="friend-card">
+                        <div class="friend-info">
+                            <img src="${f.profiles.avatar_url}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; font-size: 14px;">${f.profiles.full_name}</div>
+                            </div>
+                        </div>
+                        <div class="friend-actions">
+                            <button onclick="openChat('${f.profiles.id}', '${f.profiles.full_name}'); switchTab('chat');" style="background: var(--primary);">Чат</button>
+                            <button onclick="removeFriend(${f.id})" style="background: var(--error);">Удалить</button>
+                        </div>
+                    </div>`
+                ).join('') || '<div style="opacity: 0.5; font-size: 12px;">Нет друзей. Добавь кого-нибудь!</div>';
+            } catch(e) {
+                console.error('❌ Ошибка loadFriendsData:', e);
+                showNotification('Ошибка загрузки: ' + e.message, 'error');
+            }
+        }
+
+        async function addFriend() {
+            const val = document.getElementById('friend-id-input').value.trim().toUpperCase();
+            if(!val) { showNotification('Введи ID друга', 'warning'); return; }
+            try {
+                const { data: p } = await clientSB.from('profiles').select('id').eq('short_id', val).single();
+                if(!p) { showNotification('ID не найден', 'error'); return; }
+                if(p.id === currentUser.id) { showNotification('Нельзя добавить себя', 'warning'); return; }
+                
+                await clientSB.from('friends').insert({ sender_id: currentUser.id, receiver_id: p.id });
+                showNotification('✓ Заявка отправлена!', 'success');
+                document.getElementById('friend-id-input').value = '';
+                loadFriendsData();
+            } catch(e) {
+                if(e.message.includes('duplicate')) showNotification('Уже добавлен', 'info');
+                else showNotification('Ошибка: ' + e.message, 'error');
+            }
+        }
+
+        async function acceptFriend(id) { 
+            try {
+                await clientSB.from('friends').update({ status: 'accepted' }).eq('id', id);
+                showNotification('✓ Друг добавлен!', 'success');
+                loadFriendsData();
+                loadChatList();
+            } catch(e) { showNotification('Ошибка: ' + e.message, 'error'); }
+        }
+
+        async function removeFriend(id) {
+            if(!confirm('Удалить из друзей?')) return;
+            try {
+                await clientSB.from('friends').delete().eq('id', id);
+                showNotification('✓ Удалено из друзей', 'success');
+                loadFriendsData();
+                loadChatList();
+            } catch(e) { showNotification('Ошибка: ' + e.message, 'error'); }
+        }
+
+        // ============= SETTINGS =============
+        async function updateProfileName() {
+            const name = document.getElementById('set-nick').value.trim();
+            if(!name) { showNotification('Введи имя', 'warning'); return; }
+            try {
+                await clientSB.from('profiles').update({ full_name: name }).eq('id', currentUser.id);
+                showNotification('✓ Имя обновлено!', 'success');
+                loadFriendsData();
+            } catch(e) { showNotification('Ошибка: ' + e.message, 'error'); }
+        }
+
+        async function updateAvatar(input) {
+            if(!input.files[0]) return;
+            try {
+                const file = input.files[0];
+                const path = `avatars/${currentUser.id}_${Date.now()}`;
+                await clientSB.storage.from('uploads').upload(path, file);
+                const { data } = clientSB.storage.from('uploads').getPublicUrl(path);
+                await clientSB.from('profiles').update({ avatar_url: data.publicUrl }).eq('id', currentUser.id);
+                document.getElementById('my-avatar').src = data.publicUrl;
+                document.getElementById('set-avatar').src = data.publicUrl;
+                showNotification('✓ Аватар обновлен!', 'success');
+            } catch(e) { showNotification('Ошибка: ' + e.message, 'error'); }
+        }
+
+        function setTheme(t) { 
+            document.body.className = t === 'dark' ? '' : 'theme-' + t; 
+            localStorage.setItem('th_x3', t); 
+            showNotification('✓ Тема изменена', 'info'); 
+        }
+
+        // ============= PIXEL BATTLE =============
         function drawGrid() {
             const overlay = document.getElementById('pixel-overlay') || document.createElement('canvas');
             overlay.id = 'pixel-overlay';
@@ -202,15 +676,14 @@
                 octx.stroke();
             }
         }
-        
-        // Подсветка под курсором
+
         function drawCursorHighlight(x, y) {
             const overlay = document.getElementById('pixel-overlay');
             if(!overlay) return;
             const octx = overlay.getContext('2d');
             octx.clearRect(0, 0, overlay.width, overlay.height);
             
-            // Перерисуем сетку
+            // Перерисовываем сетку
             octx.strokeStyle = 'rgba(100,100,100,0.15)';
             octx.lineWidth = 0.5;
             for(let i = 0; i <= 500; i += 50) {
@@ -225,10 +698,10 @@
             }
             
             // Подсветка пикселя
-            octx.strokeStyle = 'rgba(255, 200, 0, 0.6)';
+            octx.strokeStyle = 'rgba(255, 200, 0, 0.8)';
             octx.lineWidth = 2;
             octx.strokeRect(x - 0.5, y - 0.5, 1, 1);
-            octx.fillStyle = 'rgba(255, 200, 0, 0.1)';
+            octx.fillStyle = 'rgba(255, 200, 0, 0.15)';
             octx.fillRect(x - 0.5, y - 0.5, 1, 1);
         }
 
@@ -252,7 +725,6 @@
             if(isPanning) { offsetX += e.movementX; offsetY += e.movementY; updateCanvasTransform(); }
             else if(isDrawing) { drawPixel(e); }
             else {
-                // Показываем подсветку курсора
                 const rect = wrapper.getBoundingClientRect();
                 const clientX = e.clientX - rect.left;
                 const clientY = e.clientY - rect.top;
@@ -272,11 +744,8 @@
 
         async function drawPixel(e) {
             const rect = wrapper.getBoundingClientRect();
-            // Правильный расчёт координат с учётом трансформации
             const clientX = e.clientX - rect.left;
             const clientY = e.clientY - rect.top;
-            
-            // Учитываем offset и scale
             const x = Math.floor((clientX - offsetX) / scale);
             const y = Math.floor((clientY - offsetY) / scale);
             
@@ -288,381 +757,57 @@
             
             try {
                 await clientSB.from('pixels').insert({ x, y, color, user_id: currentUser.id, author_name: currentUser.user_metadata.full_name });
-            } catch(e) { console.error('Ошибка рисования:', e); }
-        }
-
-
-        // --- MESSENGER FEATURES ---
-        async function syncProfile(user) {
-            myShortID = "X3-" + user.id.slice(0, 5).toUpperCase();
-            const { data: p } = await clientSB.from('profiles').upsert({ id: user.id, short_id: myShortID, full_name: user.user_metadata.full_name, avatar_url: user.user_metadata.avatar_url }).select().single();
-            
-            document.getElementById('my-avatar').src = p.avatar_url;
-            document.getElementById('set-avatar').src = p.avatar_url;
-            document.getElementById('set-nick').value = p.full_name;
-            document.getElementById('set-id').innerText = "ID: " + p.short_id;
-
-            peer = new Peer(user.id);
-            peer.on('call', async (call) => {
-                if(confirm("Входящий звонок! Ответить?")) {
-                    try {
-                        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                        document.getElementById('video-container').classList.remove('hidden');
-                        document.getElementById('local-video').srcObject = stream;
-                        call.answer(stream);
-                        call.on('stream', rem => { document.getElementById('remote-video').srcObject = rem; });
-                    } catch(e) { showNotification('Нет доступа к камере/микрофону', 'error'); }
-                }
-            });
-            loadChatList();
-            loadMessages();
-        }
-
-        async function uploadMedia() {
-            if(!currentPartnerId) { showNotification('Выберите чат сначала', 'warning'); return; }
-            const file = document.getElementById('fileInput').files[0];
-            if(!file) return;
-            try {
-                const name = `media/${Date.now()}_${file.name}`;
-                await clientSB.storage.from('uploads').upload(name, file);
-                const { data } = clientSB.storage.from('uploads').getPublicUrl(name);
-                let type = file.type.startsWith('image') ? 'image' : (file.type.startsWith('video') ? 'video' : 'file');
-                await clientSB.from('messages').insert([{ text: data.publicUrl, sender_id: currentUser.id, receiver_id: currentPartnerId, type, author_name: currentUser.user_metadata.full_name }]);
-                document.getElementById('fileInput').value = '';
-                showNotification('Файл отправлен!', 'success');
-            } catch(e) { showNotification('Ошибка загрузки: ' + e.message, 'error'); }
-        }
-
-        // Голосовые сообщения
-        let recorder;
-        document.getElementById('micBtn').onclick = async () => {
-            if(!currentPartnerId) { showNotification('Выберите чат для записи', 'warning'); return; }
-            const icon = document.getElementById('micIcon');
-            if(!recorder || recorder.state === 'inactive') {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    recorder = new MediaRecorder(stream);
-                    let chunks = [];
-                    recorder.ondataavailable = e => chunks.push(e.data);
-                    recorder.onstop = async () => {
-                        try {
-                            const blob = new Blob(chunks, { type: 'audio/webm' });
-                            const name = `voice/${Date.now()}.webm`;
-                            await clientSB.storage.from('uploads').upload(name, blob);
-                            const { data } = clientSB.storage.from('uploads').getPublicUrl(name);
-                            await clientSB.from('messages').insert([{ text: data.publicUrl, sender_id: currentUser.id, receiver_id: currentPartnerId, type: 'audio', author_name: currentUser.user_metadata.full_name }]);
-                            showNotification('Голосовое отправлено!', 'success');
-                        } catch(e) { showNotification('Ошибка отправки ГС: ' + e.message, 'error'); }
-                    };
-                    recorder.start();
-                    icon.classList.add('rec-pulse');
-                    showNotification('Запись началась...', 'info');
-                } catch(e) { showNotification('Нет доступа к микрофону', 'error'); }
-            } else {
-                recorder.stop();
-                icon.classList.remove('rec-pulse');
-            }
-        };
-
-        async function startCall(v) {
-            if(!currentPartnerId) { showNotification('Выберите контакт', 'warning'); return; }
-            try {
-                const s = await navigator.mediaDevices.getUserMedia({ video: v, audio: true });
-                document.getElementById('video-container').classList.remove('hidden');
-                document.getElementById('local-video').srcObject = s;
-                const call = peer.call(currentPartnerId, s);
-                call.on('stream', rem => { document.getElementById('remote-video').srcObject = rem; });
-                showNotification(v ? 'Видео звонок начат' : 'Аудио звонок начат', 'success');
-            } catch(e) { showNotification('Ошибка звонка: ' + e.message, 'error'); }
-        }
-
-        async function blockUser(userId = null) {
-            const targetId = userId || currentPartnerId;
-            if(!targetId) { showNotification('Выберите пользователя', 'warning'); return; }
-            if(targetId === currentUser.id) { showNotification('Нельзя заблокировать себя', 'warning'); return; }
-            if(!confirm('Заблокировать этого пользователя?')) return;
-
-            try {
-                await clientSB.from('blocks').upsert({ blocker_id: currentUser.id, blocked_id: targetId }, { onConflict: ['blocker_id', 'blocked_id'] });
-                showNotification('Пользователь заблокирован', 'success');
-                loadChatList();
-            } catch(e) {
-                console.error('blockUser error', e);
-                showNotification('Ошибка блокировки: ' + (e.message || e.error || 'Неизвестная'), 'error');
-            }
-        }
-
-        async function unblockUser(userId) {
-            try {
-                await clientSB.from('blocks').delete().eq('blocker_id', currentUser.id).eq('blocked_id', userId);
-                showNotification('Пользователь разблокирован', 'success');
-                loadChatList();
-            } catch(e) { showNotification('Ошибка разблокировки', 'error'); }
-        }
-
-        async function deleteChatForEveryone() {
-            if(!currentPartnerId) { showNotification('Нет активного чата', 'warning'); return; }
-            if(confirm("Удалить всю переписку для ОБОИХ?")) {
-                try {
-                    await clientSB.from('messages').delete().or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${currentPartnerId}),and(sender_id.eq.${currentPartnerId},receiver_id.eq.${currentUser.id})`);
-                    loadMessages();
-                    showNotification('Чат удален для всех', 'success');
-                } catch(e) { showNotification('Ошибка удаления', 'error'); }
-            }
-        }
-
-        // --- СТАНДАРТНАЯ ЛОГИКА ---
-        function switchTab(t) {
-            ['chat-sidebar-ui', 'section-friends', 'section-pixel', 'section-settings'].forEach(id => document.getElementById(id).classList.add('hidden'));
-            if(t === 'chat') document.getElementById('chat-sidebar-ui').classList.remove('hidden');
-            else document.getElementById('section-' + t).classList.remove('hidden');
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('tab-' + t).classList.add('active');
-            if(t === 'pixel') initPixelBattle();
+            } catch(e) { console.error('drawPixel error:', e); }
         }
 
         async function initPixelBattle() {
+            console.log('🎨 Загружаем Pixel Battle...');
             drawGrid();
             const { data } = await clientSB.from('pixels').select('*').order('created_at', { ascending: false }).limit(250000);
-            // НЕ очищаем полотно, только закрашиваем пиксели
             if(data) {
                 const pixelMap = {};
                 data.forEach(p => { pixelMap[p.x + '_' + p.y] = p; });
                 Object.values(pixelMap).forEach(p => { ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, 1, 1); });
             }
-            showNotification('Pixel Battle загружен', 'success');
+            showNotification('✓ Pixel Battle загружен', 'success');
         }
 
-        async function openChat(id, name) {
-            currentPartnerId = id;
-            document.getElementById('chat-title').innerText = name;
-            document.getElementById('chat-actions').classList.toggle('hidden', !id);
-            
-            // Проверка блокировки
-            if(id) {
-                const { data: blocks } = await clientSB.from('blocks').select('*').or(`and(blocker_id.eq.${currentUser.id},blocked_id.eq.${id}),and(blocker_id.eq.${id},blocked_id.eq.${currentUser.id})`);
-                if(blocks && blocks.length > 0) {
-                    document.getElementById('box').innerHTML = '<div class="text-center opacity-50">❌ Пользователь заблокирован</div>';
-                    return;
-                }
-            }
-            
-            loadMessages();
+        // ============= UI NAVIGATION =============
+        function switchTab(t) {
+            document.querySelectorAll('[id^="view-"]').forEach(el => el.classList.add('hidden'));
+            document.getElementById('view-' + t).classList.remove('hidden');
+            document.querySelectorAll('.nav-icon').forEach(b => b.classList.remove('active'));
+            event?.target?.classList.add('active');
+            if(t === 'pixel') initPixelBattle();
         }
 
-        async function loadMessages() {
-            let q = clientSB.from('messages').select('*');
-            if(!currentPartnerId) q = q.eq('sender_id', currentUser.id).is('receiver_id', null);
-            else q = q.or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${currentPartnerId}),and(sender_id.eq.${currentPartnerId},receiver_id.eq.${currentUser.id})`);
-            const { data } = await q.order('created_at', { ascending: true });
-            document.getElementById('box').innerHTML = (data || []).map(m => {
-                let content = m.text;
-                if(m.type === 'image') content = `<img src="${m.text}" class="rounded-xl max-h-60" onclick="window.open('${m.text}')">`;
-                if(m.type === 'video') content = `<video src="${m.text}" controls class="rounded-xl max-h-60"></video>`;
-                if(m.type === 'audio') content = `<audio src="${m.text}" controls class="h-8 w-44"></audio>`;
-                if(m.type === 'file') content = `<a href="${m.text}" target="_blank" class="text-blue-400 underline font-bold italic">📄 Файл</a>`;
-                
-                const time = new Date(m.created_at).toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
-                const readMark = m.read_at ? '<span class="msg-read">✓✓</span>' : '<span>✓</span>';
-                
-                return `<div class="${m.sender_id === currentUser.id ? 'msg-own' : 'msg-other'}">
-                    <div>${content}</div>
-                    <div class="msg-time">${time} ${m.sender_id === currentUser.id ? readMark : ''}</div>
-                </div>`;
-            }).join('');
-            document.getElementById('box').scrollTop = 99999;
-        }
+        document.getElementById('msg').onkeypress = e => { if (e.key === 'Enter') send(); };
+        document.getElementById('set-id').onclick = () => {
+            navigator.clipboard.writeText(myShortID);
+            showNotification('✓ ID скопирован: ' + myShortID, 'success');
+        };
 
-        async function send() {
-            const val = document.getElementById('msg').value.trim();
-            if(!val) return;
-            if(currentPartnerId === undefined) { showNotification('Выберите чат', 'warning'); return; }
-            
-            try {
-                await clientSB.from('messages').insert([{
-                    text: val,
-                    sender_id: currentUser.id,
-                    receiver_id: currentPartnerId,
-                    author_name: currentUser.user_metadata.full_name,
-                    type: 'text'
-                }]);
-                document.getElementById('msg').value = '';
-                loadMessages();
-                showNotification('Сообщение отправлено', 'success');
-            } catch(e) {
-                console.error('send error', e);
-                showNotification('Ошибка отправки: ' + (e.message || e.error || 'Ошибка сети'), 'error');
-            }
-        }
-
-        async function addFriend() {
-            const val = document.getElementById('friend-id-input').value.trim().toUpperCase();
-            if(!val) { showNotification('Введите ID', 'warning'); return; }
-            try {
-                const { data: p } = await clientSB.from('profiles').select('id').eq('short_id', val).single();
-                if(!p) { showNotification("ID не найден", 'error'); return; }
-                if(p.id === currentUser.id) { showNotification('Нельзя добавить себя', 'warning'); return; }
-                
-                await clientSB.from('friends').insert({ sender_id: currentUser.id, receiver_id: p.id });
-                showNotification("Заявка отправлена!", 'success');
-                document.getElementById('friend-id-input').value = '';
-                loadFriendsData();
-            } catch(e) {
-                if(e.message.includes('duplicate')) {
-                    showNotification('Уже добавлен в друзья', 'info');
-                } else {
-                    showNotification('Ошибка: ' + e.message, 'error');
-                }
-            }
-        }
-
-        async function acceptFriend(id) { 
-            try {
-                await clientSB.from('friends').update({ status: 'accepted' }).eq('id', id);
-                showNotification('Друг добавлен!', 'success');
-                loadFriendsData();
-                loadChatList();
-            } catch(e) { showNotification('Ошибка', 'error'); }
-        }
-
-        async function removeFriend(friendId) {
-            if(!confirm('Уверены, что хотите удалить из друзей?')) return;
-            try {
-                await clientSB.from('friends').delete().eq('id', friendId);
-                showNotification('Удалено из друзей', 'success');
-                if(currentPartnerId === friendId) {
-                    currentPartnerId = null;
-                    openChat(null, 'Избранное');
-                }
-                loadFriendsData();
-                loadChatList();
-            } catch(e) {
-                console.error('removeFriend error', e);
-                showNotification('Ошибка удаления из друзей: ' + (e.message || e.error || 'Ошибка сети'), 'error');
-            }
-        }
-
-        async function loadFriendsData() {
-            try {
-                // Заявки в друзья (где текущий пользователь получатель)
-                const { data: req } = await clientSB.from('friends')
-                    .select('id, sender_id, receiver_id, profiles!sender_id(id, full_name, avatar_url)')
-                    .eq('receiver_id', currentUser.id)
-                    .eq('status', 'pending');
-                
-                document.getElementById('requests-list').innerHTML = (req || []).map(r => 
-                    `<div class="flex justify-between items-center glass p-3 rounded-xl">
-                        <span>${r.profiles.full_name}</span>
-                        <button onclick="acceptFriend(${r.id})" class="bg-green-600 px-4 py-1 rounded-xl text-xs font-bold uppercase hover:bg-green-500">Принять</button>
-                    </div>`
-                ).join('') || '<p class="opacity-30 italic text-xs">Заявок нет</p>';
-                
-                // Мои друзья
-                const { data: f1 } = await clientSB.from('friends')
-                    .select('id, sender_id, receiver_id, profiles!receiver_id(id, full_name, avatar_url)')
-                    .eq('sender_id', currentUser.id)
-                    .eq('status', 'accepted');
-                
-                const { data: f2 } = await clientSB.from('friends')
-                    .select('id, sender_id, receiver_id, profiles!sender_id(id, full_name, avatar_url)')
-                    .eq('receiver_id', currentUser.id)
-                    .eq('status', 'accepted');
-                
-                const allFriends = [...(f1 || []), ...(f2 || [])];
-                document.getElementById('friends-list').innerHTML = allFriends.map(f => 
-                    `<div class="flex justify-between items-center gap-3 glass p-3 rounded-xl">
-                        <div class="flex items-center gap-3 flex-1 cursor-pointer" onclick="openChat('${f.profiles.id}', '${f.profiles.full_name}')">
-                            <img src="${f.profiles.avatar_url}" class="w-8 h-8 rounded-full border border-blue-500 shadow-lg">
-                            <div class="text-sm font-bold">${f.profiles.full_name}</div>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="blockUser('${f.profiles.id}')" style="color: currentColor; cursor: pointer;" title="Заблокировать"><i class="fa-solid fa-ban text-xs opacity-50 hover:opacity-100"></i></button>
-                            <button onclick="removeFriend(${f.id})" class="text-red-500 hover:text-red-400 opacity-50 hover:opacity-100 transition" title="Удалить"><i class="fa-solid fa-trash text-xs"></i></button>
-                        </div>
-                    </div>`
-                ).join('') || '<p class="opacity-30 italic text-xs">Список пуст</p>';
-            } catch(e) { 
-                console.error('loadFriendsData error:', e);
-                showNotification('Ошибка загрузки друзей: ' + e.message, 'error'); 
-            }
-        }
-
-        async function loadChatList() {
-            try {
-                // Мои друзья где я отправитель
-                const { data: f1 } = await clientSB.from('friends')
-                    .select('id, sender_id, receiver_id, profiles!receiver_id(id, full_name, avatar_url)')
-                    .eq('sender_id', currentUser.id)
-                    .eq('status', 'accepted');
-                
-                // Мои друзья где я получатель
-                const { data: f2 } = await clientSB.from('friends')
-                    .select('id, sender_id, receiver_id, profiles!sender_id(id, full_name, avatar_url)')
-                    .eq('receiver_id', currentUser.id)
-                    .eq('status', 'accepted');
-                
-                const { data: blocksFromMe } = await clientSB.from('blocks').select('blocked_id').eq('blocker_id', currentUser.id);
-                const { data: blocksToMe } = await clientSB.from('blocks').select('blocker_id').eq('blocked_id', currentUser.id);
-                const blockedByMeIds = (blocksFromMe || []).map(b => b.blocked_id);
-                const blockedMeIds = (blocksToMe || []).map(b => b.blocker_id);
-
-                const html = [...(f1 || []), ...(f2 || [])].map(f => {
-                    const isBlocked = blockedByMeIds.includes(f.profiles.id) || blockedMeIds.includes(f.profiles.id);
-                    return `<div onclick="openChat('${f.profiles.id}', '${f.profiles.full_name}')" class="chat-item ${isBlocked ? 'blocked' : ''}" title="${isBlocked ? '🚫 Заблокирован' : ''}">
-                        <img src="${f.profiles.avatar_url}" class="w-10 h-10 rounded-xl border border-white/10 shadow-lg">
-                        <div class="text-sm font-bold">${f.profiles.full_name}</div>
-                        <div class="unread-badge" id="badge-${f.profiles.id}" style="display: none;"></div>
-                    </div>`;
-                }).join('');
-                document.getElementById('active-chats').innerHTML = html;
-            } catch(e) { 
-                console.error('loadChatList error:', e);
-                showNotification('Ошибка загрузки чатов: ' + e.message, 'error'); 
-            }
-        }
-
-        async function updateProfileName() {
-            const name = document.getElementById('set-nick').value.trim();
-            if(!name) { showNotification('Введите имя', 'warning'); return; }
-            try {
-                await clientSB.from('profiles').update({ full_name: name }).eq('id', currentUser.id);
-                showNotification('Имя обновлено!', 'success');
-            } catch(e) { showNotification('Ошибка обновления', 'error'); }
-        }
-
-        async function updateAvatar(input) {
-            if(!input.files[0]) return;
-            try {
-                const file = input.files[0];
-                const path = `avatars/${currentUser.id}_${Date.now()}.png`;
-                await clientSB.storage.from('uploads').upload(path, file);
-                const { data } = clientSB.storage.from('uploads').getPublicUrl(path);
-                await clientSB.from('profiles').update({ avatar_url: data.publicUrl }).eq('id', currentUser.id);
-                document.getElementById('my-avatar').src = data.publicUrl;
-                document.getElementById('set-avatar').src = data.publicUrl;
-                showNotification('Аватар обновлен!', 'success');
-            } catch(e) { showNotification('Ошибка загрузки аватара', 'error'); }
-        }
-
+        // ============= AUTH STATE =============
         clientSB.auth.onAuthStateChange((ev, session) => {
+            console.log('🔐 Auth state changed:', !!session);
             if (session) {
                 currentUser = session.user;
                 document.getElementById('auth-ui').classList.add('hidden');
                 document.getElementById('main-ui').classList.remove('hidden');
                 syncProfile(currentUser);
-                clientSB.channel('gl')
+                
+                clientSB.channel('sys')
                     .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => loadMessages())
                     .on('postgres_changes', { event: '*', schema: 'public', table: 'friends' }, () => { loadFriendsData(); loadChatList(); })
                     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pixels' }, (p) => { ctx.fillStyle = p.new.color; ctx.fillRect(p.new.x, p.new.y, 1, 1); })
-                    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'blocks' }, () => loadChatList())
                     .subscribe();
-                showNotification('Добро пожаловать в X3!', 'success');
+            } else {
+                document.getElementById('auth-ui').classList.remove('hidden');
+                document.getElementById('main-ui').classList.add('hidden');
             }
         });
 
-        function setTheme(t) { document.body.className = t === 'dark' ? '' : 'theme-' + t; localStorage.setItem('th_x3', t); showNotification('Тема изменена', 'info'); }
         setTheme(localStorage.getItem('th_x3') || 'dark');
-        document.getElementById('msg').onkeypress = e => { if (e.key === 'Enter') send(); };
     </script>
 </body>
 </html>

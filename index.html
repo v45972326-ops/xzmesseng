@@ -231,9 +231,14 @@
         }
 
         async function drawPixel(e) {
-            const rect = canvas.getBoundingClientRect();
-            const x = Math.floor((e.clientX - rect.left) / scale - offsetX / scale);
-            const y = Math.floor((e.clientY - rect.top) / scale - offsetY / scale);
+            const rect = wrapper.getBoundingClientRect();
+            // Правильный расчёт координат с учётом трансформации
+            const clientX = e.clientX - rect.left;
+            const clientY = e.clientY - rect.top;
+            
+            // Учитываем offset и scale
+            const x = Math.floor((clientX - offsetX) / scale);
+            const y = Math.floor((clientY - offsetY) / scale);
             
             if(x < 0 || x >= 2500 || y < 0 || y >= 2500) return;
             
@@ -282,7 +287,7 @@
                 await clientSB.storage.from('uploads').upload(name, file);
                 const { data } = clientSB.storage.from('uploads').getPublicUrl(name);
                 let type = file.type.startsWith('image') ? 'image' : (file.type.startsWith('video') ? 'video' : 'file');
-                await clientSB.from('messagesmessages').insert([{ text: data.publicUrl, sender_id: currentUser.id, receiver_id: currentPartnerId, type, author_name: currentUser.user_metadata.full_name }]);
+                await clientSB.from('messages').insert([{ text: data.publicUrl, sender_id: currentUser.id, receiver_id: currentPartnerId, type, author_name: currentUser.user_metadata.full_name }]);
                 document.getElementById('fileInput').value = '';
                 showNotification('Файл отправлен!', 'success');
             } catch(e) { showNotification('Ошибка загрузки: ' + e.message, 'error'); }
@@ -305,7 +310,7 @@
                             const name = `voice/${Date.now()}.webm`;
                             await clientSB.storage.from('uploads').upload(name, blob);
                             const { data } = clientSB.storage.from('uploads').getPublicUrl(name);
-                            await clientSB.from('messagesmessages').insert([{ text: data.publicUrl, sender_id: currentUser.id, receiver_id: currentPartnerId, type: 'audio', author_name: currentUser.user_metadata.full_name }]);
+                            await clientSB.from('messages').insert([{ text: data.publicUrl, sender_id: currentUser.id, receiver_id: currentPartnerId, type: 'audio', author_name: currentUser.user_metadata.full_name }]);
                             showNotification('Голосовое отправлено!', 'success');
                         } catch(e) { showNotification('Ошибка отправки ГС: ' + e.message, 'error'); }
                     };
@@ -358,7 +363,7 @@
             if(!currentPartnerId) { showNotification('Нет активного чата', 'warning'); return; }
             if(confirm("Удалить всю переписку для ОБОИХ?")) {
                 try {
-                    await clientSB.from('messagesmessages').delete().or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${currentPartnerId}),and(sender_id.eq.${currentPartnerId},receiver_id.eq.${currentUser.id})`);
+                    await clientSB.from('messages').delete().or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${currentPartnerId}),and(sender_id.eq.${currentPartnerId},receiver_id.eq.${currentUser.id})`);
                     loadMessages();
                     showNotification('Чат удален для всех', 'success');
                 } catch(e) { showNotification('Ошибка удаления', 'error'); }
@@ -406,7 +411,7 @@
         }
 
         async function loadMessages() {
-            let q = clientSB.from('messagesmessages').select('*');
+            let q = clientSB.from('messages').select('*');
             if(!currentPartnerId) q = q.eq('sender_id', currentUser.id).is('receiver_id', null);
             else q = q.or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${currentPartnerId}),and(sender_id.eq.${currentPartnerId},receiver_id.eq.${currentUser.id})`);
             const { data } = await q.order('created_at', { ascending: true });
@@ -434,7 +439,7 @@
             if(currentPartnerId === undefined) { showNotification('Выберите чат', 'warning'); return; }
             
             try {
-                await clientSB.from('messagesmessages').insert([{
+                await clientSB.from('messages').insert([{
                     text: val,
                     sender_id: currentUser.id,
                     receiver_id: currentPartnerId,
@@ -571,7 +576,7 @@
                 document.getElementById('main-ui').classList.remove('hidden');
                 syncProfile(currentUser);
                 clientSB.channel('gl')
-                    .on('postgres_changes', { event: '*', schema: 'public', table: 'messagesmessages' }, () => loadMessages())
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => loadMessages())
                     .on('postgres_changes', { event: '*', schema: 'public', table: 'friends' }, () => { loadFriendsData(); loadChatList(); })
                     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pixels' }, (p) => { ctx.fillStyle = p.new.color; ctx.fillRect(p.new.x, p.new.y, 1, 1); })
                     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'blocks' }, () => loadChatList())

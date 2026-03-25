@@ -119,7 +119,7 @@
                     <input type="color" id="pixel-color" value="#2563eb" class="bg-transparent border-none w-10 h-10">
                 </div>
                 <div class="pixel-wrapper glass" id="pixel-wrapper">
-                    <canvas id="pixel-canvas" width="2500" height="2500"></canvas>
+                    <canvas id="pixel-canvas" width="500" height="500"></canvas>
                 </div>
                 <div class="text-[9px] text-gray-500 mt-2">ЛКМ: Рисовать | Shift+ЛКМ или ПКМ: Двигать | Колесико: Зум</div>
             </div>
@@ -188,19 +188,48 @@
             wrapper.appendChild(overlay);
             
             const octx = overlay.getContext('2d');
-            octx.strokeStyle = 'rgba(100,100,100,0.2)';
+            octx.strokeStyle = 'rgba(100,100,100,0.15)';
             octx.lineWidth = 0.5;
             
-            for(let i = 0; i <= 2500; i += 100) {
+            for(let i = 0; i <= 500; i += 50) {
                 octx.beginPath();
                 octx.moveTo(i, 0);
-                octx.lineTo(i, 2500);
+                octx.lineTo(i, 500);
                 octx.stroke();
                 octx.beginPath();
                 octx.moveTo(0, i);
-                octx.lineTo(2500, i);
+                octx.lineTo(500, i);
                 octx.stroke();
             }
+        }
+        
+        // Подсветка под курсором
+        function drawCursorHighlight(x, y) {
+            const overlay = document.getElementById('pixel-overlay');
+            if(!overlay) return;
+            const octx = overlay.getContext('2d');
+            octx.clearRect(0, 0, overlay.width, overlay.height);
+            
+            // Перерисуем сетку
+            octx.strokeStyle = 'rgba(100,100,100,0.15)';
+            octx.lineWidth = 0.5;
+            for(let i = 0; i <= 500; i += 50) {
+                octx.beginPath();
+                octx.moveTo(i, 0);
+                octx.lineTo(i, 500);
+                octx.stroke();
+                octx.beginPath();
+                octx.moveTo(0, i);
+                octx.lineTo(500, i);
+                octx.stroke();
+            }
+            
+            // Подсветка пикселя
+            octx.strokeStyle = 'rgba(255, 200, 0, 0.6)';
+            octx.lineWidth = 2;
+            octx.strokeRect(x - 0.5, y - 0.5, 1, 1);
+            octx.fillStyle = 'rgba(255, 200, 0, 0.1)';
+            octx.fillRect(x - 0.5, y - 0.5, 1, 1);
         }
 
         wrapper.onwheel = (e) => {
@@ -222,6 +251,17 @@
         wrapper.onmousemove = (e) => {
             if(isPanning) { offsetX += e.movementX; offsetY += e.movementY; updateCanvasTransform(); }
             else if(isDrawing) { drawPixel(e); }
+            else {
+                // Показываем подсветку курсора
+                const rect = wrapper.getBoundingClientRect();
+                const clientX = e.clientX - rect.left;
+                const clientY = e.clientY - rect.top;
+                const x = Math.floor((clientX - offsetX) / scale);
+                const y = Math.floor((clientY - offsetY) / scale);
+                if(x >= 0 && x < 500 && y >= 0 && y < 500) {
+                    drawCursorHighlight(x, y);
+                }
+            }
         };
 
         function updateCanvasTransform() {
@@ -240,7 +280,7 @@
             const x = Math.floor((clientX - offsetX) / scale);
             const y = Math.floor((clientY - offsetY) / scale);
             
-            if(x < 0 || x >= 2500 || y < 0 || y >= 2500) return;
+            if(x < 0 || x >= 500 || y < 0 || y >= 500) return;
             
             const color = document.getElementById('pixel-color').value;
             ctx.fillStyle = color;
@@ -336,13 +376,14 @@
             } catch(e) { showNotification('Ошибка звонка: ' + e.message, 'error'); }
         }
 
-        async function blockUser() {
-            if(!currentPartnerId) { showNotification('Выберите пользователя', 'warning'); return; }
-            if(currentPartnerId === currentUser.id) { showNotification('Нельзя заблокировать себя', 'warning'); return; }
+        async function blockUser(userId = null) {
+            const targetId = userId || currentPartnerId;
+            if(!targetId) { showNotification('Выберите пользователя', 'warning'); return; }
+            if(targetId === currentUser.id) { showNotification('Нельзя заблокировать себя', 'warning'); return; }
             if(!confirm('Заблокировать этого пользователя?')) return;
 
             try {
-                await clientSB.from('blocks').upsert({ blocker_id: currentUser.id, blocked_id: currentPartnerId }, { onConflict: ['blocker_id', 'blocked_id'] });
+                await clientSB.from('blocks').upsert({ blocker_id: currentUser.id, blocked_id: targetId }, { onConflict: ['blocker_id', 'blocked_id'] });
                 showNotification('Пользователь заблокирован', 'success');
                 loadChatList();
             } catch(e) {
@@ -382,9 +423,8 @@
 
         async function initPixelBattle() {
             drawGrid();
-            const { data } = await clientSB.from('pixels').select('*').order('created_at', { ascending: false }).limit(50000);
-            ctx.fillStyle = "white"; 
-            ctx.fillRect(0,0,2500,2500);
+            const { data } = await clientSB.from('pixels').select('*').order('created_at', { ascending: false }).limit(250000);
+            // НЕ очищаем полотно, только закрашиваем пиксели
             if(data) {
                 const pixelMap = {};
                 data.forEach(p => { pixelMap[p.x + '_' + p.y] = p; });
@@ -504,30 +544,62 @@
 
         async function loadFriendsData() {
             try {
-                const { data: req } = await clientSB.from('friends').select('id, profiles:sender_id(*)').eq('receiver_id', currentUser.id).eq('status', 'pending');
-                document.getElementById('requests-list').innerHTML = (req || []).map(r => `<div class="flex justify-between items-center glass p-3 rounded-xl"><span>${r.profiles.full_name}</span><button onclick="acceptFriend(${r.id})" class="bg-green-600 px-4 py-1 rounded-xl text-xs font-bold uppercase hover:bg-green-500">Принять</button></div>`).join('') || '<p class="opacity-30 italic text-xs">Заявок нет</p>';
+                // Заявки в друзья (где текущий пользователь получатель)
+                const { data: req } = await clientSB.from('friends')
+                    .select('id, sender_id, receiver_id, profiles!sender_id(id, full_name, avatar_url)')
+                    .eq('receiver_id', currentUser.id)
+                    .eq('status', 'pending');
                 
-                const { data: f1 } = await clientSB.from('friends').select('id, profiles:receiver_id(*)').eq('sender_id', currentUser.id).eq('status', 'accepted');
-                const { data: f2 } = await clientSB.from('friends').select('id, profiles:sender_id(*)').eq('receiver_id', currentUser.id).eq('status', 'accepted');
+                document.getElementById('requests-list').innerHTML = (req || []).map(r => 
+                    `<div class="flex justify-between items-center glass p-3 rounded-xl">
+                        <span>${r.profiles.full_name}</span>
+                        <button onclick="acceptFriend(${r.id})" class="bg-green-600 px-4 py-1 rounded-xl text-xs font-bold uppercase hover:bg-green-500">Принять</button>
+                    </div>`
+                ).join('') || '<p class="opacity-30 italic text-xs">Заявок нет</p>';
+                
+                // Мои друзья
+                const { data: f1 } = await clientSB.from('friends')
+                    .select('id, sender_id, receiver_id, profiles!receiver_id(id, full_name, avatar_url)')
+                    .eq('sender_id', currentUser.id)
+                    .eq('status', 'accepted');
+                
+                const { data: f2 } = await clientSB.from('friends')
+                    .select('id, sender_id, receiver_id, profiles!sender_id(id, full_name, avatar_url)')
+                    .eq('receiver_id', currentUser.id)
+                    .eq('status', 'accepted');
                 
                 const allFriends = [...(f1 || []), ...(f2 || [])];
-                document.getElementById('friends-list').innerHTML = allFriends.map(f => `<div class="flex justify-between items-center gap-3 glass p-3 rounded-xl">
-                    <div class="flex items-center gap-3 flex-1 cursor-pointer" onclick="openChat('${f.profiles.id}', '${f.profiles.full_name}')">
-                        <img src="${f.profiles.avatar_url}" class="w-8 h-8 rounded-full border border-blue-500 shadow-lg">
-                        <div class="text-sm font-bold">${f.profiles.full_name}</div>
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="blockUser()" style="color: currentColor; cursor: pointer;" title="Заблокировать"><i class="fa-solid fa-ban text-xs opacity-50 hover:opacity-100"></i></button>
-                        <button onclick="removeFriend(${f.id})" class="text-red-500 hover:text-red-400 opacity-50 hover:opacity-100 transition" title="Удалить"><i class="fa-solid fa-trash text-xs"></i></button>
-                    </div>
-                </div>`).join('') || '<p class="opacity-30 italic text-xs">Список пуст</p>';
-            } catch(e) { showNotification('Ошибка загрузки друзей', 'error'); }
+                document.getElementById('friends-list').innerHTML = allFriends.map(f => 
+                    `<div class="flex justify-between items-center gap-3 glass p-3 rounded-xl">
+                        <div class="flex items-center gap-3 flex-1 cursor-pointer" onclick="openChat('${f.profiles.id}', '${f.profiles.full_name}')">
+                            <img src="${f.profiles.avatar_url}" class="w-8 h-8 rounded-full border border-blue-500 shadow-lg">
+                            <div class="text-sm font-bold">${f.profiles.full_name}</div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="blockUser('${f.profiles.id}')" style="color: currentColor; cursor: pointer;" title="Заблокировать"><i class="fa-solid fa-ban text-xs opacity-50 hover:opacity-100"></i></button>
+                            <button onclick="removeFriend(${f.id})" class="text-red-500 hover:text-red-400 opacity-50 hover:opacity-100 transition" title="Удалить"><i class="fa-solid fa-trash text-xs"></i></button>
+                        </div>
+                    </div>`
+                ).join('') || '<p class="opacity-30 italic text-xs">Список пуст</p>';
+            } catch(e) { 
+                console.error('loadFriendsData error:', e);
+                showNotification('Ошибка загрузки друзей: ' + e.message, 'error'); 
+            }
         }
 
         async function loadChatList() {
             try {
-                const { data: f1 } = await clientSB.from('friends').select('profiles:receiver_id(*)').eq('sender_id', currentUser.id).eq('status', 'accepted');
-                const { data: f2 } = await clientSB.from('friends').select('profiles:sender_id(*)').eq('receiver_id', currentUser.id).eq('status', 'accepted');
+                // Мои друзья где я отправитель
+                const { data: f1 } = await clientSB.from('friends')
+                    .select('id, sender_id, receiver_id, profiles!receiver_id(id, full_name, avatar_url)')
+                    .eq('sender_id', currentUser.id)
+                    .eq('status', 'accepted');
+                
+                // Мои друзья где я получатель
+                const { data: f2 } = await clientSB.from('friends')
+                    .select('id, sender_id, receiver_id, profiles!sender_id(id, full_name, avatar_url)')
+                    .eq('receiver_id', currentUser.id)
+                    .eq('status', 'accepted');
                 
                 const { data: blocksFromMe } = await clientSB.from('blocks').select('blocked_id').eq('blocker_id', currentUser.id);
                 const { data: blocksToMe } = await clientSB.from('blocks').select('blocker_id').eq('blocked_id', currentUser.id);
@@ -543,7 +615,10 @@
                     </div>`;
                 }).join('');
                 document.getElementById('active-chats').innerHTML = html;
-            } catch(e) { showNotification('Ошибка загрузки чатов', 'error'); }
+            } catch(e) { 
+                console.error('loadChatList error:', e);
+                showNotification('Ошибка загрузки чатов: ' + e.message, 'error'); 
+            }
         }
 
         async function updateProfileName() {

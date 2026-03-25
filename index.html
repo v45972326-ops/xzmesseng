@@ -300,20 +300,26 @@
                 console.log('🔄 Синхронизация профиля...');
                 myShortID = "X3-" + user.id.slice(0, 4).toUpperCase();
                 
-                const { data: existing } = await clientSB.from('profiles').select('*').eq('id', user.id).single();
+                const { data: existing, error: existError } = await clientSB.from('profiles').select('*').eq('id', user.id).single();
                 
-                if (!existing) {
+                if (!existing || existError) {
                     console.log('👤 Создаём новый профиль...');
-                    await clientSB.from('profiles').insert({ 
+                    const { error: insError } = await clientSB.from('profiles').insert({ 
                         id: user.id, 
                         short_id: myShortID, 
                         full_name: user.user_metadata.full_name || 'Пользователь', 
-                        avatar_url: user.user_metadata.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`,
-                        peer_id: user.id
+                        avatar_url: user.user_metadata.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`
                     });
+                    if(insError) console.error('Insert error:', insError);
                 }
 
-                const { data: profile } = await clientSB.from('profiles').select('*').eq('id', user.id).single();
+                const { data: profile, error: selError } = await clientSB.from('profiles').select('*').eq('id', user.id).single();
+                
+                if(!profile || selError) {
+                    console.error('❌ Профиль не загрузился:', selError);
+                    throw new Error('Не удалось загрузить профиль');
+                }
+                
                 console.log('✅ Профиль синхронизирован:', profile);
 
                 document.getElementById('my-avatar').src = profile.avatar_url;
@@ -380,11 +386,15 @@
 
         async function openChat(id, name) {
             currentPartnerId = id;
+            console.log('🔄 Открываем чат. ID:', id, 'Name:', name);
+            
             document.querySelectorAll('.chat-item').forEach(item => item.classList.remove('active'));
             if(id === null) {
                 document.getElementById('fav-chat').classList.add('active');
             } else {
-                event.target.closest('.chat-item').classList.add('active');
+                if(event && event.target) {
+                    event.target.closest('.chat-item')?.classList.add('active');
+                }
             }
             
             document.querySelector('.chat-title').innerText = name;
@@ -427,16 +437,27 @@
         async function send() {
             const val = document.getElementById('msg').value.trim();
             if(!val) return;
-            if(currentPartnerId === undefined) { showNotification('Выбери чат', 'warning'); return; }
             
             try {
-                await clientSB.from('messages').insert([{
+                console.log('📤 Отправляем сообщение. Partner:', currentPartnerId);
+                
+                const msgData = {
                     text: val,
                     sender_id: currentUser.id,
-                    receiver_id: currentPartnerId,
+                    receiver_id: currentPartnerId || null,  // null если избранное
                     author_name: currentUser.user_metadata.full_name,
                     type: 'text'
-                }]);
+                };
+                
+                const { error } = await clientSB.from('messages').insert([msgData]);
+                
+                if(error) {
+                    console.error('❌ Ошибка отправки:', error);
+                    showNotification('Ошибка: ' + error.message, 'error');
+                    return;
+                }
+                
+                console.log('✓ Сообщение отправлено!');
                 document.getElementById('msg').value = '';
                 loadMessages();
                 showNotification('✓ Отправлено', 'success');
@@ -459,7 +480,7 @@
 
         // ============= MEDIA =============
         async function uploadMedia() {
-            if(!currentPartnerId && currentPartnerId !== null) { showNotification('Выбери чат', 'warning'); return; }
+            if(currentPartnerId === undefined) { showNotification('Выбери чат', 'warning'); return; }
             const file = document.getElementById('fileInput').files[0];
             if(!file) return;
             try {
@@ -470,7 +491,7 @@
                 await clientSB.from('messages').insert([{ 
                     text: data.publicUrl, 
                     sender_id: currentUser.id, 
-                    receiver_id: currentPartnerId, 
+                    receiver_id: currentPartnerId || null, 
                     type, 
                     author_name: currentUser.user_metadata.full_name 
                 }]);
@@ -483,7 +504,7 @@
         // ============= VOICE =============
         let recorder;
         document.getElementById('micBtn').onclick = async () => {
-            if(!currentPartnerId && currentPartnerId !== null) { showNotification('Выбери чат', 'warning'); return; }
+            if(currentPartnerId === undefined) { showNotification('Выбери чат', 'warning'); return; }
             const icon = document.getElementById('micBtn').querySelector('i');
             if(!recorder || recorder.state === 'inactive') {
                 try {
@@ -500,7 +521,7 @@
                             await clientSB.from('messages').insert([{ 
                                 text: data.publicUrl, 
                                 sender_id: currentUser.id, 
-                                receiver_id: currentPartnerId, 
+                                receiver_id: currentPartnerId || null, 
                                 type: 'audio', 
                                 author_name: currentUser.user_metadata.full_name 
                             }]);
@@ -728,8 +749,14 @@
                 const rect = wrapper.getBoundingClientRect();
                 const clientX = e.clientX - rect.left;
                 const clientY = e.clientY - rect.top;
-                const x = Math.floor((clientX - offsetX) / scale);
-                const y = Math.floor((clientY - offsetY) / scale);
+                
+                // Учитываем offset (может быть отрицательный при движении вправо/вниз)
+                const relX = clientX - offsetX;
+                const relY = clientY - offsetY;
+                
+                const x = Math.floor(relX / scale);
+                const y = Math.floor(relY / scale);
+                
                 if(x >= 0 && x < 500 && y >= 0 && y < 500) {
                     drawCursorHighlight(x, y);
                 }
@@ -746,8 +773,12 @@
             const rect = wrapper.getBoundingClientRect();
             const clientX = e.clientX - rect.left;
             const clientY = e.clientY - rect.top;
-            const x = Math.floor((clientX - offsetX) / scale);
-            const y = Math.floor((clientY - offsetY) / scale);
+            
+            const relX = clientX - offsetX;
+            const relY = clientY - offsetY;
+            
+            const x = Math.floor(relX / scale);
+            const y = Math.floor(relY / scale);
             
             if(x < 0 || x >= 500 || y < 0 || y >= 500) return;
             
@@ -756,7 +787,14 @@
             ctx.fillRect(x, y, 1, 1);
             
             try {
-                await clientSB.from('pixels').insert({ x, y, color, user_id: currentUser.id, author_name: currentUser.user_metadata.full_name });
+                await clientSB.from('pixels').insert({ x, y, color, user_id: currentUser.id, author_name: currentUser.user_metadata.full_name }).then(() => {
+                    console.log(`✓ Пиксель (${x}, ${y}) нарисован`);
+                }).catch(err => {
+                    if(err.code === '23505') {
+                        // Дубль - обновляем цвет вместо вставки
+                        clientSB.from('pixels').update({ color }).eq('x', x).eq('y', y).catch(e => console.error('Update error:', e));
+                    }
+                });
             } catch(e) { console.error('drawPixel error:', e); }
         }
 

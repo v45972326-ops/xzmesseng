@@ -333,18 +333,16 @@
 
         async function blockUser() {
             if(!currentPartnerId) { showNotification('Выберите пользователя', 'warning'); return; }
-            if(confirm('Заблокировать этого пользователя?')) {
-                try {
-                    await clientSB.from('blocks').insert({ blocker_id: currentUser.id, blocked_id: currentPartnerId }).onConflict('blocker_id,blocked_id').ignore();
-                    showNotification('Пользователь заблокирован', 'success');
-                    loadChatList();
-                } catch(e) { 
-                    if(e.message.includes('duplicate')) {
-                        showNotification('Уже заблокирован', 'info');
-                    } else {
-                        showNotification('Ошибка блокировки: ' + e.message, 'error');
-                    }
-                }
+            if(currentPartnerId === currentUser.id) { showNotification('Нельзя заблокировать себя', 'warning'); return; }
+            if(!confirm('Заблокировать этого пользователя?')) return;
+
+            try {
+                await clientSB.from('blocks').upsert({ blocker_id: currentUser.id, blocked_id: currentPartnerId }, { onConflict: ['blocker_id', 'blocked_id'] });
+                showNotification('Пользователь заблокирован', 'success');
+                loadChatList();
+            } catch(e) {
+                console.error('blockUser error', e);
+                showNotification('Ошибка блокировки: ' + (e.message || e.error || 'Неизвестная'), 'error');
             }
         }
 
@@ -431,20 +429,25 @@
         }
 
         async function send() {
-            const val = document.getElementById('msg').value.trim(); 
+            const val = document.getElementById('msg').value.trim();
             if(!val) return;
-            if(currentPartnerId === undefined) { alert('Выберите чат сначала'); return; }
+            if(currentPartnerId === undefined) { showNotification('Выберите чат', 'warning'); return; }
             
             try {
-                await clientSB.from('messagesmessages').insert([{ 
-                    text: val, 
-                    sender_id: currentUser.id, 
-                    receiver_id: currentPartnerId, 
-                    author_name: currentUser.user_metadata.full_name, 
-                    type: 'text' 
+                await clientSB.from('messagesmessages').insert([{
+                    text: val,
+                    sender_id: currentUser.id,
+                    receiver_id: currentPartnerId,
+                    author_name: currentUser.user_metadata.full_name,
+                    type: 'text'
                 }]);
                 document.getElementById('msg').value = '';
-            } catch(e) { showNotification('Ошибка отправки', 'error'); }
+                loadMessages();
+                showNotification('Сообщение отправлено', 'success');
+            } catch(e) {
+                console.error('send error', e);
+                showNotification('Ошибка отправки: ' + (e.message || e.error || 'Ошибка сети'), 'error');
+            }
         }
 
         async function addFriend() {
@@ -478,13 +481,20 @@
         }
 
         async function removeFriend(friendId) {
-            if(!confirm('Удалить из друзей?')) return;
+            if(!confirm('Уверены, что хотите удалить из друзей?')) return;
             try {
                 await clientSB.from('friends').delete().eq('id', friendId);
                 showNotification('Удалено из друзей', 'success');
+                if(currentPartnerId === friendId) {
+                    currentPartnerId = null;
+                    openChat(null, 'Избранное');
+                }
                 loadFriendsData();
                 loadChatList();
-            } catch(e) { showNotification('Ошибка удаления', 'error'); }
+            } catch(e) {
+                console.error('removeFriend error', e);
+                showNotification('Ошибка удаления из друзей: ' + (e.message || e.error || 'Ошибка сети'), 'error');
+            }
         }
 
         async function loadFriendsData() {
@@ -514,11 +524,13 @@
                 const { data: f1 } = await clientSB.from('friends').select('profiles:receiver_id(*)').eq('sender_id', currentUser.id).eq('status', 'accepted');
                 const { data: f2 } = await clientSB.from('friends').select('profiles:sender_id(*)').eq('receiver_id', currentUser.id).eq('status', 'accepted');
                 
-                const { data: blocks } = await clientSB.from('blocks').select('blocked_id').eq('blocker_id', currentUser.id);
-                const blockedIds = (blocks || []).map(b => b.blocked_id);
-                
+                const { data: blocksFromMe } = await clientSB.from('blocks').select('blocked_id').eq('blocker_id', currentUser.id);
+                const { data: blocksToMe } = await clientSB.from('blocks').select('blocker_id').eq('blocked_id', currentUser.id);
+                const blockedByMeIds = (blocksFromMe || []).map(b => b.blocked_id);
+                const blockedMeIds = (blocksToMe || []).map(b => b.blocker_id);
+
                 const html = [...(f1 || []), ...(f2 || [])].map(f => {
-                    const isBlocked = blockedIds.includes(f.profiles.id);
+                    const isBlocked = blockedByMeIds.includes(f.profiles.id) || blockedMeIds.includes(f.profiles.id);
                     return `<div onclick="openChat('${f.profiles.id}', '${f.profiles.full_name}')" class="chat-item ${isBlocked ? 'blocked' : ''}" title="${isBlocked ? '🚫 Заблокирован' : ''}">
                         <img src="${f.profiles.avatar_url}" class="w-10 h-10 rounded-xl border border-white/10 shadow-lg">
                         <div class="text-sm font-bold">${f.profiles.full_name}</div>
